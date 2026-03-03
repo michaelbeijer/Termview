@@ -25,9 +25,16 @@ echo ""
 echo "=== Deploying to Trados Studio ==="
 
 # Always wipe the Unpacked folder first so Trados re-extracts cleanly.
+# If files are locked (Trados is still running), warn but continue —
+# the new package will still be copied and will take effect after a restart.
 if [ -d "$UNPACKED_DIR" ]; then
     echo "  Removing stale Unpacked/Termview..."
-    rm -rf "$UNPACKED_DIR"
+    if rm -rf "$UNPACKED_DIR" 2>/dev/null; then
+        echo "  Unpacked folder cleaned."
+    else
+        echo "  WARNING: Could not fully remove Unpacked/Termview — Trados Studio may still be running."
+        echo "  The new package was still copied. For a clean load, close Trados first, then run this script again."
+    fi
 fi
 
 # Copy the new package.

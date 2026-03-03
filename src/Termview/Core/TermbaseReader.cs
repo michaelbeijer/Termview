@@ -28,7 +28,10 @@ namespace Termview.Core
 
             try
             {
-                var connStr = $"Data Source={_dbPath};Version=3;Read Only=True;";
+                // Do not use "Read Only=True" — it prevents SQLite from accessing
+                // the SHM coordination file required when the DB is in WAL mode
+                // (e.g. while Supervertaler has it open). We only run SELECTs anyway.
+                var connStr = $"Data Source={_dbPath};Version=3;";
                 _connection = new SQLiteConnection(connStr);
                 _connection.Open();
                 return true;
