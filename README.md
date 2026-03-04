@@ -2,17 +2,17 @@
 
 **Instant terminology insight for every segment**
 
-A Trados Studio plugin that displays terminology matches inline within the source segment text — the same approach used in [Supervertaler](https://supervertaler.com).
+A Trados Studio plugin that displays terminology matches in a dedicated panel docked below the editor — using the same approach as [Supervertaler](https://supervertaler.com).
 
-Instead of showing matched terms in a separate list, TermLens renders the full source segment word-by-word with glossary translations displayed directly underneath each matched term. Translators see every term match in context, without breaking their reading flow.
+TermLens renders the full source segment word-by-word in its own panel, with glossary translations displayed directly underneath each matched term. Translators see every term match in context without having to switch to a separate termbase lookup window.
 
 ## How it works
 
-As you navigate between segments in the Trados Studio editor, TermLens scans the source text against your loaded termbase and highlights every match. Each matched term appears as a coloured block with the target-language translation directly below it — so you can read the source naturally while seeing all terminology at a glance.
+As you navigate between segments in the Trados Studio editor, the TermLens panel updates automatically. It shows the source text word-by-word, scanning it against your loaded termbase. Each matched term appears as a coloured block with the target-language translation directly below it — so you can see all terminology at a glance in the panel below the editor.
 
 ## Features
 
-- **Inline terminology display** — source words flow left to right with translations directly underneath matched terms
+- **Dedicated terminology panel** — source words flow left to right with translations directly underneath matched terms
 - **Color-coded by termbase** — project termbases (pink) vs. regular termbases (blue) at a glance
 - **Multi-word term support** — correctly matches phrases like "prior art" or "machine translation" as single units
 - **Click to insert** — click any translation to insert it at the cursor position in the target segment
