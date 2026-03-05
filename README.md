@@ -72,7 +72,7 @@ This runs `dotnet build`, packages the output into an OPC-format `.sdlplugin`, a
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+Source available — see [LICENSE](LICENSE) for details. Pre-built binaries are available at [supervertaler.com](https://supervertaler.com).
 
 ## Author
 
