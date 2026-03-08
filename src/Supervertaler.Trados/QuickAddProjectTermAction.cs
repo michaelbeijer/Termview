@@ -12,12 +12,12 @@ using Supervertaler.Trados.Settings;
 namespace Supervertaler.Trados
 {
     /// <summary>
-    /// Keyboard-only action: "Quick add Term to Project Termbase".
+    /// Keyboard-only action: "Quick-add Term to Project Termbase".
     /// Responds to Alt+Up. Extracts selected source/target text and inserts
     /// the term directly into the project termbase, bypassing the AddTermDialog.
     /// </summary>
     [Action("TermLens_QuickAddProjectTerm", typeof(EditorController),
-        Name = "Quick add term to project termbase",
+        Name = "Quick-add term to project termbase",
         Description = "Quickly add the selected source/target text to the project termbase (no dialog)")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 7,
@@ -47,7 +47,7 @@ namespace Supervertaler.Trados
                         "No project termbase is configured.\n\n" +
                         "Open TermLens settings (gear icon) and check the \u201cProject\u201d column " +
                         "for the termbase that should receive project-specific terms.",
-                        "TermLens \u2014 Quick Add to Project",
+                        "TermLens \u2014 Quick-Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -57,7 +57,7 @@ namespace Supervertaler.Trados
                 {
                     MessageBox.Show(
                         "Database file not found. Please check the TermLens settings.",
-                        "TermLens \u2014 Quick Add to Project",
+                        "TermLens \u2014 Quick-Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -108,7 +108,7 @@ namespace Supervertaler.Trados
                         "Both source and target text are required.\n\n" +
                         "Make sure you have an active segment with text in both " +
                         "the source and target columns.",
-                        "TermLens \u2014 Quick Add to Project",
+                        "TermLens \u2014 Quick-Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -126,7 +126,7 @@ namespace Supervertaler.Trados
                     MessageBox.Show(
                         "The configured project termbase was not found in the database.\n" +
                         "Please check the TermLens settings.",
-                        "TermLens \u2014 Quick Add to Project",
+                        "TermLens \u2014 Quick-Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -171,7 +171,7 @@ namespace Supervertaler.Trados
                     {
                         MessageBox.Show(
                             "This term already exists in the termbase.",
-                            "TermLens \u2014 Quick Add to Project",
+                            "TermLens \u2014 Quick-Add to Project",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
@@ -180,7 +180,7 @@ namespace Supervertaler.Trados
                     MessageBox.Show(
                         $"Failed to add term: {ex.Message}\n\n" +
                         "The database may be locked by another application.",
-                        "TermLens \u2014 Quick Add to Project",
+                        "TermLens \u2014 Quick-Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }

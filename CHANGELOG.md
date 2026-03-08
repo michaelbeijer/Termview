@@ -2,15 +2,56 @@
 
 ## [Unreleased]
 
-### Planned
-- **AI chat assistant** — project-aware chat interface docked in Trados
-- **TBX support** — to be added simultaneously in both Supervertaler and this plugin
-
 ---
 
 All notable changes to Supervertaler for Trados (formerly TermLens) will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [Semantic Versioning](https://semver.org/).
+
+---
+
+## [3.3.0] — 2026-03-08
+
+### Added
+- **AI Assistant** — project-aware chat interface in a separate dockable Trados panel;
+  supports multi-turn conversations with full context from the active segment (source,
+  target, termbase terms, TM matches); responses render as Markdown with headings, bold,
+  italic, inline code, code blocks, tables, and lists; right-click to copy or apply
+  suggestions directly to the target segment
+- **Image attachments in chat** — paste images from clipboard (Ctrl+V), drag and drop
+  image files, or browse with the attach button; thumbnails appear in an attachment strip
+  below the input; images are sent to the AI using each provider's vision/multimodal API
+  (OpenAI, Claude, Gemini, Ollama); click thumbnails in chat bubbles to view full-size
+- **AI context control** — new "AI Context" section in AI Settings lets you choose which
+  termbases contribute terms to AI prompts (independent of TermLens display settings) and
+  toggle whether TM (Translation Memory) fuzzy matches are included in the AI context
+- **TM match integration** — when enabled in settings, TM fuzzy matches for the active
+  segment are included in the AI Assistant's system prompt, showing match percentage,
+  source/target text, and TM name so the AI can leverage existing translations
+- **Ollama support for AI Assistant** — local Ollama models can be used for the chat
+  assistant with configurable endpoint
+- **Custom OpenAI-compatible endpoints** — profile-based configuration for any
+  OpenAI-compatible API (e.g., Azure OpenAI, LM Studio, vLLM); multiple profiles
+  supported with separate endpoint, model, and API key per profile
+- **Chat tooltips** — all chat input buttons (Send, Stop, Clear, Attach) now show
+  descriptive tooltips explaining their function and keyboard shortcuts
+
+### Changed
+- **Attachment icon** — replaced the paperclip emoji (📎) with a clearer photo icon
+  from Segoe MDL2 Assets for better visibility in the chat input area
+- **Chat rendering** — eliminated extra blank lines between paragraphs in AI responses
+  for more compact, readable output
+- **Shift+Enter for newlines** — the chat input now supports Shift+Enter to insert line
+  breaks without sending the message (Enter alone sends)
+- **AI Settings layout** — the AI Context section now repositions dynamically based on
+  the selected provider, eliminating wasted space when provider-specific panels (Ollama,
+  Custom OpenAI) are hidden; the termbases checklist is taller to show more entries
+  without scrolling
+
+### Fixed
+- **TermLens header text cutoff** — the word count and match summary in the TermLens
+  panel header is no longer truncated by the floating gear and help buttons; added right
+  padding to account for the button overlay
 
 ---
 

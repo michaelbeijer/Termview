@@ -1,0 +1,837 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Windows.Forms;
+using Sdl.Desktop.IntegrationApi.Interfaces;
+using Supervertaler.Trados.Models;
+
+namespace Supervertaler.Trados.Controls
+{
+    /// <summary>
+    /// Main UI control for the Supervertaler Assistant dockable ViewPart.
+    /// Hosts a TabControl with two tabs:
+    ///   - Chat: conversational AI interface with context strip, message area, input, image attachments
+    ///   - Batch Translate: BatchTranslateControl for bulk AI translation
+    /// Gear and help buttons float at the top-right, visible on all tabs.
+    /// </summary>
+    public class AiAssistantControl : UserControl, IUIControl
+    {
+        // Tab control + floating buttons
+        private readonly TabControl _tabControl;
+        private readonly Button _btnSettings;
+        private readonly Button _btnHelp;
+
+        // Chat tab controls (assigned in BuildChatTab, called from constructor)
+        private Panel _contextStrip;
+        private Label _lblContext;
+        private Panel _chatPanel;
+        private FlowLayoutPanel _messageFlow;
+        private Panel _inputPanel;
+        private TextBox _txtInput;
+        private Button _btnSend;
+        private Button _btnStop;
+        private Button _btnClear;
+        private Button _btnAttach;
+        private Label _lblStatus;
+        private Label _lblThinking;
+        private FlowLayoutPanel _attachmentStrip;
+
+        // Batch Translate tab
+        private readonly BatchTranslateControl _batchTranslateControl;
+
+        private bool _isThinking;
+
+        // Pending image attachments for the next message
+        private readonly List<ImageAttachment> _pendingImages = new List<ImageAttachment>();
+
+        private const int MaxImages = 5;
+        private const int MaxImageBytes = 10 * 1024 * 1024; // 10 MB
+
+        /// <summary>Raised when the user presses Enter or clicks Send.</summary>
+        public event EventHandler<ChatSendEventArgs> SendRequested;
+
+        /// <summary>Raised when the user clicks Clear.</summary>
+        public event EventHandler ClearRequested;
+
+        /// <summary>Raised when the user clicks "Apply to target" on a message.</summary>
+        public event EventHandler<string> ApplyToTargetRequested;
+
+        /// <summary>Raised when the user clicks Stop during a chat request.</summary>
+        public event EventHandler StopRequested;
+
+        /// <summary>Raised when the user clicks the gear/settings button.</summary>
+        public event EventHandler SettingsRequested;
+
+        /// <summary>Exposes the BatchTranslateControl for event wiring by the ViewPart.</summary>
+        public BatchTranslateControl BatchTranslateControl => _batchTranslateControl;
+
+        public AiAssistantControl()
+        {
+            SuspendLayout();
+            BackColor = Color.White;
+
+            // ─── Tab control (fills entire panel) ────────────────────
+            _tabControl = new TabControl
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 8.5f),
+                Padding = new Point(6, 3),
+            };
+
+            // === Chat tab ===
+            var chatPage = new TabPage("Chat") { BackColor = Color.White };
+            BuildChatTab(chatPage);
+            _tabControl.TabPages.Add(chatPage);
+
+            // === Batch Translate tab ===
+            var batchPage = new TabPage("Batch Translate") { BackColor = Color.White };
+            _batchTranslateControl = new BatchTranslateControl
+            {
+                Dock = DockStyle.Fill
+            };
+            batchPage.Controls.Add(_batchTranslateControl);
+            _tabControl.TabPages.Add(batchPage);
+
+            Controls.Add(_tabControl);
+
+            // ─── Settings gear button — floats at top-right ──────────
+            _btnSettings = new Button
+            {
+                Text = "\u2699\uFE0E",  // gear character + text presentation selector
+                Size = new Size(26, 22),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI Symbol", 10f),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                TabStop = false,
+                UseCompatibleTextRendering = true,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty
+            };
+            _btnSettings.FlatAppearance.BorderSize = 0;
+            _btnSettings.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnSettings.Click += (s, e) => SettingsRequested?.Invoke(this, EventArgs.Empty);
+
+            // Help/about button (?) — floats to the left of the gear button
+            _btnHelp = new Button
+            {
+                Text = "?",
+                Size = new Size(26, 22),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                TabStop = false,
+                UseCompatibleTextRendering = true,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(0, 1, 0, 0),
+                Margin = Padding.Empty
+            };
+            _btnHelp.FlatAppearance.BorderSize = 0;
+            _btnHelp.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnHelp.Click += OnHelpClick;
+
+            Controls.Add(_btnSettings);
+            Controls.Add(_btnHelp);
+            _btnSettings.BringToFront(); // render on top of the tab control
+            _btnHelp.BringToFront();
+
+            ResumeLayout(false);
+
+            // Position buttons at top-right, and keep them there on resize
+            Resize += (s, e) => PositionTopButtons();
+            PositionTopButtons();
+        }
+
+        /// <summary>
+        /// Builds the Chat tab contents inside the given TabPage.
+        /// Layout: context strip (top) → input panel (bottom) → thinking indicator → chat area (fill)
+        /// </summary>
+        private void BuildChatTab(TabPage page)
+        {
+            // ─── Context strip (top) ──────────────────────────────
+            _contextStrip = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 28,
+                BackColor = Color.FromArgb(248, 248, 248),
+                Padding = new Padding(8, 0, 60, 0)  // extra right padding to avoid gear/help buttons
+            };
+
+            _lblContext = new Label
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "No document open",
+                AutoEllipsis = true
+            };
+            _contextStrip.Controls.Add(_lblContext);
+
+            // Thin separator line below context
+            var contextSep = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 1,
+                BackColor = Color.FromArgb(220, 220, 220)
+            };
+            _contextStrip.Controls.Add(contextSep);
+
+            // ─── Input panel (bottom) ─────────────────────────────
+            _inputPanel = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 90,
+                Padding = new Padding(8, 4, 8, 4),
+                BackColor = Color.FromArgb(250, 250, 250)
+            };
+
+            // Thin separator line above input
+            var inputSep = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 1,
+                BackColor = Color.FromArgb(220, 220, 220)
+            };
+            _inputPanel.Controls.Add(inputSep);
+
+            _btnSend = new Button
+            {
+                Text = "Send",
+                Size = new Size(60, 26),
+                Font = new Font("Segoe UI", 8f),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = ColorTranslator.FromHtml("#D6EBFF"),
+                ForeColor = Color.FromArgb(30, 30, 30),
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                TabIndex = 1
+            };
+            _btnSend.FlatAppearance.BorderColor = Color.FromArgb(180, 200, 220);
+            _btnSend.Click += (s, e) => DoSend();
+
+            _btnStop = new Button
+            {
+                Text = "Stop",
+                Size = new Size(48, 26),
+                Font = new Font("Segoe UI", 8f),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(255, 230, 230),
+                ForeColor = Color.FromArgb(30, 30, 30),
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                Visible = false,
+                TabIndex = 2
+            };
+            _btnStop.FlatAppearance.BorderColor = Color.FromArgb(220, 180, 180);
+            _btnStop.Click += (s, e) => StopRequested?.Invoke(this, EventArgs.Empty);
+
+            _btnClear = new Button
+            {
+                Text = "Clear",
+                Size = new Size(48, 26),
+                Font = new Font("Segoe UI", 8f),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.Transparent,
+                ForeColor = Color.FromArgb(120, 120, 120),
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+                TabIndex = 3
+            };
+            _btnClear.FlatAppearance.BorderSize = 0;
+            _btnClear.FlatAppearance.MouseOverBackColor = Color.FromArgb(230, 230, 230);
+            _btnClear.Click += (s, e) => ClearRequested?.Invoke(this, EventArgs.Empty);
+
+            // Attach button for browsing image files
+            _btnAttach = new Button
+            {
+                Text = "\uE8B9",  // Photo icon in Segoe MDL2 Assets
+                Size = new Size(28, 26),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe MDL2 Assets", 10f),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+                TabIndex = 4,
+                UseCompatibleTextRendering = true,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnAttach.FlatAppearance.BorderSize = 0;
+            _btnAttach.FlatAppearance.MouseOverBackColor = Color.FromArgb(230, 230, 230);
+            _btnAttach.Click += OnAttachClick;
+
+            _lblStatus = new Label
+            {
+                Font = new Font("Segoe UI", 7f),
+                ForeColor = Color.FromArgb(140, 140, 140),
+                Text = "",
+                AutoSize = true,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+
+            _txtInput = new TextBox
+            {
+                Multiline = true,
+                AcceptsReturn = true,   // allow Enter keys as input (we handle send vs newline in KeyDown)
+                ScrollBars = ScrollBars.Vertical,
+                Font = new Font("Segoe UI", 9f),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                AllowDrop = true,
+                TabIndex = 0
+            };
+            // Mark Enter/Shift+Enter as input keys so Trados doesn't intercept them
+            _txtInput.PreviewKeyDown += (s, pe) =>
+            {
+                if (pe.KeyCode == Keys.Enter)
+                    pe.IsInputKey = true;
+            };
+            _txtInput.KeyDown += OnInputKeyDown;
+            _txtInput.DragEnter += OnDragEnter;
+            _txtInput.DragDrop += OnDragDrop;
+
+            // ─── Attachment thumbnail strip ──────────────────────
+            _attachmentStrip = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowOnly,
+                MinimumSize = new Size(0, 0),
+                MaximumSize = new Size(0, 60),  // max one row of thumbnails
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.FromArgb(250, 250, 250),
+                Padding = new Padding(0),
+                Margin = new Padding(0),
+                Visible = false,
+                Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+            };
+
+            _inputPanel.Controls.Add(_txtInput);
+            _inputPanel.Controls.Add(_attachmentStrip);
+            _inputPanel.Controls.Add(_btnSend);
+            _inputPanel.Controls.Add(_btnStop);
+            _inputPanel.Controls.Add(_btnClear);
+            _inputPanel.Controls.Add(_btnAttach);
+            _inputPanel.Controls.Add(_lblStatus);
+
+            // Tooltips for input buttons
+            var inputTips = new ToolTip { AutoPopDelay = 5000, InitialDelay = 400 };
+            inputTips.SetToolTip(_btnSend, "Send message (Enter)");
+            inputTips.SetToolTip(_btnStop, "Stop AI response");
+            inputTips.SetToolTip(_btnClear, "Clear conversation history");
+            inputTips.SetToolTip(_btnAttach, "Attach image (paste with Ctrl+V, or drag and drop)");
+            inputTips.SetToolTip(_txtInput, "Type your message. Shift+Enter for new line.");
+
+            // ─── Thinking indicator ───────────────────────────────
+            _lblThinking = new Label
+            {
+                Dock = DockStyle.Bottom,
+                Height = 24,
+                Font = new Font("Segoe UI", 8f, FontStyle.Italic),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                Text = "  Thinking\u2026",
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.FromArgb(252, 252, 252),
+                Visible = false
+            };
+
+            // ─── Chat message area (fill) ─────────────────────────
+            _chatPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                BackColor = Color.White,
+                Padding = new Padding(0, 4, 0, 4)
+            };
+
+            _messageFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowOnly,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                BackColor = Color.White,
+                Padding = new Padding(0)
+            };
+            _chatPanel.Controls.Add(_messageFlow);
+
+            // Add controls to the tab page in correct dock order
+            // (bottom first, then top, then fill)
+            page.Controls.Add(_chatPanel);
+            page.Controls.Add(_lblThinking);
+            page.Controls.Add(_inputPanel);
+            page.Controls.Add(_contextStrip);
+
+            // Layout input controls
+            _inputPanel.Resize += (s, e) => LayoutInputPanel();
+            _chatPanel.Resize += (s, e) => RelayoutBubbles();
+
+            // Initial layout when tab loads
+            page.Layout += (s, e) => LayoutInputPanel();
+        }
+
+        private void PositionTopButtons()
+        {
+            if (_btnHelp == null || _btnSettings == null) return;
+            // Help "?" at far right, gear to its left
+            _btnHelp.Location = new Point(Width - _btnHelp.Width - 2, 1);
+            _btnSettings.Location = new Point(_btnHelp.Left - _btnSettings.Width, 1);
+        }
+
+        private void OnHelpClick(object sender, EventArgs e)
+        {
+            using (var dlg = new AboutDialog())
+            {
+                dlg.ShowDialog(FindForm());
+            }
+        }
+
+        private void LayoutInputPanel()
+        {
+            var p = _inputPanel;
+            if (p == null || p.Width < 50) return;
+
+            var y2 = p.Height - 30; // bottom row for buttons
+            var attachHeight = _attachmentStrip.Visible ? _attachmentStrip.Height + 2 : 0;
+            var y1 = 6; // top of text input
+
+            // Text input fills from top to above the attachment strip + button row
+            _txtInput.Location = new Point(8, y1);
+            _txtInput.Size = new Size(p.Width - 16, y2 - y1 - 4 - attachHeight);
+
+            // Attachment strip sits between text input and button row
+            if (_attachmentStrip.Visible)
+            {
+                _attachmentStrip.Location = new Point(8, _txtInput.Bottom + 2);
+                _attachmentStrip.MaximumSize = new Size(p.Width - 16, 60);
+                _attachmentStrip.Width = p.Width - 16;
+            }
+
+            _btnSend.Location = new Point(p.Width - _btnSend.Width - 8, y2);
+            _btnStop.Location = new Point(_btnSend.Left - _btnStop.Width - 4, y2);
+            _btnClear.Location = new Point(8, y2);
+            _btnAttach.Location = new Point(_btnClear.Right + 2, y2);
+            _lblStatus.Location = new Point(_btnAttach.Right + 8, y2 + 5);
+        }
+
+        private void RelayoutBubbles()
+        {
+            if (_chatPanel == null || _chatPanel.Width < 50) return;
+            var w = _chatPanel.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 2;
+            foreach (Control ctrl in _messageFlow.Controls)
+            {
+                var bubble = ctrl as ChatBubble;
+                bubble?.RecalculateSize(w);
+            }
+        }
+
+        private void OnInputKeyDown(object sender, KeyEventArgs e)
+        {
+            // Ctrl+V with image on clipboard — intercept for image paste
+            if (e.Control && e.KeyCode == Keys.V)
+            {
+                if (Clipboard.ContainsImage())
+                {
+                    e.SuppressKeyPress = true;
+                    AddImageFromClipboard();
+                    return;
+                }
+            }
+
+            if (e.KeyCode == Keys.Enter && !e.Shift)
+            {
+                e.SuppressKeyPress = true;
+                DoSend();
+            }
+            else if (e.KeyCode == Keys.Enter && e.Shift)
+            {
+                // Explicitly insert newline for Shift+Enter — Trados may intercept
+                // the default TextBox handling, so we do it manually
+                e.SuppressKeyPress = true;
+                var selStart = _txtInput.SelectionStart;
+                _txtInput.Text = _txtInput.Text.Insert(selStart, Environment.NewLine);
+                _txtInput.SelectionStart = selStart + Environment.NewLine.Length;
+            }
+        }
+
+        // ─── Image Attachment Methods ────────────────────────────
+
+        private void AddImageFromClipboard()
+        {
+            if (_pendingImages.Count >= MaxImages) return;
+
+            try
+            {
+                var img = Clipboard.GetImage();
+                if (img == null) return;
+
+                using (var ms = new MemoryStream())
+                {
+                    img.Save(ms, ImageFormat.Png);
+                    var data = ms.ToArray();
+                    if (data.Length > MaxImageBytes) return;
+
+                    var attachment = new ImageAttachment
+                    {
+                        Data = data,
+                        MimeType = "image/png",
+                        FileName = $"paste_{DateTime.Now:HHmmss}.png",
+                        Width = img.Width,
+                        Height = img.Height
+                    };
+                    AddImage(attachment);
+                }
+            }
+            catch { /* Clipboard access may fail */ }
+        }
+
+        private void AddImageFromFile(string filePath)
+        {
+            if (_pendingImages.Count >= MaxImages) return;
+
+            try
+            {
+                var ext = Path.GetExtension(filePath).ToLowerInvariant();
+                string mimeType;
+                switch (ext)
+                {
+                    case ".png": mimeType = "image/png"; break;
+                    case ".jpg": case ".jpeg": mimeType = "image/jpeg"; break;
+                    case ".gif": mimeType = "image/gif"; break;
+                    case ".webp": mimeType = "image/webp"; break;
+                    case ".bmp": mimeType = "image/bmp"; break;
+                    default: return; // unsupported format
+                }
+
+                var data = File.ReadAllBytes(filePath);
+                if (data.Length > MaxImageBytes) return;
+
+                // Get dimensions
+                int w = 0, h = 0;
+                try
+                {
+                    using (var ms = new MemoryStream(data))
+                    using (var img = Image.FromStream(ms, false, false))
+                    {
+                        w = img.Width;
+                        h = img.Height;
+                    }
+                }
+                catch { }
+
+                var attachment = new ImageAttachment
+                {
+                    Data = data,
+                    MimeType = mimeType,
+                    FileName = Path.GetFileName(filePath),
+                    Width = w,
+                    Height = h
+                };
+                AddImage(attachment);
+            }
+            catch { /* File read failure */ }
+        }
+
+        private void AddImage(ImageAttachment attachment)
+        {
+            _pendingImages.Add(attachment);
+            AddThumbnailToStrip(attachment);
+            UpdateAttachmentStripVisibility();
+            LayoutInputPanel();
+        }
+
+        private void RemoveImage(ImageAttachment attachment)
+        {
+            _pendingImages.Remove(attachment);
+
+            // Find and remove the corresponding thumbnail panel
+            for (int i = _attachmentStrip.Controls.Count - 1; i >= 0; i--)
+            {
+                if (_attachmentStrip.Controls[i].Tag == attachment)
+                {
+                    var ctrl = _attachmentStrip.Controls[i];
+                    _attachmentStrip.Controls.RemoveAt(i);
+                    ctrl.Dispose();
+                    break;
+                }
+            }
+
+            UpdateAttachmentStripVisibility();
+            LayoutInputPanel();
+        }
+
+        private void ClearAttachments()
+        {
+            _pendingImages.Clear();
+            _attachmentStrip.SuspendLayout();
+            foreach (Control ctrl in _attachmentStrip.Controls)
+                ctrl.Dispose();
+            _attachmentStrip.Controls.Clear();
+            _attachmentStrip.ResumeLayout();
+            UpdateAttachmentStripVisibility();
+            LayoutInputPanel();
+        }
+
+        private void UpdateAttachmentStripVisibility()
+        {
+            _attachmentStrip.Visible = _pendingImages.Count > 0;
+
+            // Grow input panel when attachments are present
+            _inputPanel.Height = _pendingImages.Count > 0 ? 140 : 90;
+        }
+
+        private void AddThumbnailToStrip(ImageAttachment attachment)
+        {
+            // Container panel for thumbnail + remove button
+            var thumbPanel = new Panel
+            {
+                Size = new Size(54, 54),
+                Margin = new Padding(2),
+                Tag = attachment
+            };
+
+            // Thumbnail image
+            var picBox = new PictureBox
+            {
+                Size = new Size(48, 48),
+                Location = new Point(0, 0),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.FromArgb(240, 240, 240),
+                BorderStyle = BorderStyle.FixedSingle,
+                Cursor = Cursors.Hand
+            };
+
+            try
+            {
+                using (var ms = new MemoryStream(attachment.Data))
+                {
+                    picBox.Image = Image.FromStream(ms);
+                }
+            }
+            catch
+            {
+                picBox.BackColor = Color.FromArgb(200, 200, 200);
+            }
+
+            // ✕ remove button (top-right corner of thumbnail)
+            var btnRemove = new Button
+            {
+                Text = "\u00D7", // ×
+                Size = new Size(16, 16),
+                Location = new Point(34, 0),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 7f, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(180, 60, 60),
+                Cursor = Cursors.Hand,
+                TabStop = false,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty
+            };
+            btnRemove.FlatAppearance.BorderSize = 0;
+            btnRemove.Click += (s, e) => RemoveImage(attachment);
+
+            // Tooltip with filename
+            var tip = new ToolTip();
+            tip.SetToolTip(picBox, attachment.FileName);
+
+            thumbPanel.Controls.Add(btnRemove);
+            thumbPanel.Controls.Add(picBox);
+            btnRemove.BringToFront();
+
+            _attachmentStrip.Controls.Add(thumbPanel);
+        }
+
+        // ─── Drag and Drop ─────────────────────────────────────
+
+        private void OnDragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files != null && HasImageFiles(files))
+                {
+                    e.Effect = DragDropEffects.Copy;
+                    return;
+                }
+            }
+
+            e.Effect = DragDropEffects.None;
+        }
+
+        private void OnDragDrop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files == null) return;
+
+            foreach (var file in files)
+            {
+                if (_pendingImages.Count >= MaxImages) break;
+                if (IsImageFile(file))
+                    AddImageFromFile(file);
+            }
+        }
+
+        private static bool HasImageFiles(string[] files)
+        {
+            foreach (var f in files)
+                if (IsImageFile(f)) return true;
+            return false;
+        }
+
+        private static bool IsImageFile(string path)
+        {
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            return ext == ".png" || ext == ".jpg" || ext == ".jpeg"
+                || ext == ".gif" || ext == ".webp" || ext == ".bmp";
+        }
+
+        // ─── Attach button (file browse) ─────────────────────
+
+        private void OnAttachClick(object sender, EventArgs e)
+        {
+            if (_pendingImages.Count >= MaxImages) return;
+
+            using (var dlg = new OpenFileDialog
+            {
+                Title = "Attach Image",
+                Filter = "Image files|*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp|All files|*.*",
+                Multiselect = true
+            })
+            {
+                if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+                {
+                    foreach (var file in dlg.FileNames)
+                    {
+                        if (_pendingImages.Count >= MaxImages) break;
+                        AddImageFromFile(file);
+                    }
+                }
+            }
+        }
+
+        // ─── Send ──────────────────────────────────────────────
+
+        private void DoSend()
+        {
+            if (_isThinking) return;
+            var text = _txtInput.Text?.Trim();
+
+            // Allow sending images even without text, and text without images
+            var hasText = !string.IsNullOrEmpty(text);
+            var hasImages = _pendingImages.Count > 0;
+
+            if (!hasText && !hasImages) return;
+
+            _txtInput.Clear();
+
+            // Capture and clear pending images
+            List<ImageAttachment> images = null;
+            if (hasImages)
+            {
+                images = new List<ImageAttachment>(_pendingImages);
+                ClearAttachments();
+            }
+
+            SendRequested?.Invoke(this, new ChatSendEventArgs
+            {
+                Text = text ?? "",
+                Images = images
+            });
+        }
+
+        /// <summary>
+        /// Adds a message bubble to the chat panel and scrolls to it.
+        /// </summary>
+        public void AddMessage(ChatMessage message)
+        {
+            var bubbleWidth = _chatPanel.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 2;
+            var bubble = new ChatBubble(message, Math.Max(200, bubbleWidth));
+            bubble.ApplyRequested += (s, text) =>
+                ApplyToTargetRequested?.Invoke(this, text);
+
+            _messageFlow.Controls.Add(bubble);
+
+            // Auto-scroll to latest message
+            _chatPanel.ScrollControlIntoView(bubble);
+        }
+
+        /// <summary>
+        /// Removes all chat bubbles and resets the display.
+        /// </summary>
+        public void ClearMessages()
+        {
+            _messageFlow.SuspendLayout();
+            foreach (Control ctrl in _messageFlow.Controls)
+                ctrl.Dispose();
+            _messageFlow.Controls.Clear();
+            _messageFlow.ResumeLayout();
+        }
+
+        /// <summary>
+        /// Shows or hides the "Thinking..." indicator and toggles Send/Stop buttons.
+        /// </summary>
+        public void SetThinking(bool isThinking)
+        {
+            _isThinking = isThinking;
+            _lblThinking.Visible = isThinking;
+            _btnSend.Visible = !isThinking;
+            _btnStop.Visible = isThinking;
+            _txtInput.Enabled = !isThinking;
+        }
+
+        /// <summary>
+        /// Updates the context strip with current segment info.
+        /// </summary>
+        public void UpdateContextInfo(string sourceText, string targetText,
+            int termCount, string langPair)
+        {
+            var parts = new List<string>();
+
+            if (!string.IsNullOrEmpty(langPair))
+                parts.Add(langPair);
+
+            if (!string.IsNullOrEmpty(sourceText))
+            {
+                var truncated = sourceText.Length > 60
+                    ? sourceText.Substring(0, 57) + "\u2026"
+                    : sourceText;
+                parts.Add("Source: \u201c" + truncated + "\u201d");
+            }
+
+            if (termCount > 0)
+                parts.Add(termCount + " term" + (termCount == 1 ? "" : "s"));
+
+            _lblContext.Text = parts.Count > 0
+                ? string.Join("  |  ", parts)
+                : "No document open";
+        }
+
+        /// <summary>
+        /// Updates the status bar with provider/model info.
+        /// </summary>
+        public void UpdateProviderInfo(string provider, string model)
+        {
+            _lblStatus.Text = !string.IsNullOrEmpty(provider) && !string.IsNullOrEmpty(model)
+                ? $"{provider} / {model}"
+                : "";
+        }
+
+        /// <summary>
+        /// Sets focus to the input textbox.
+        /// </summary>
+        public void FocusInput()
+        {
+            _txtInput?.Focus();
+        }
+    }
+}

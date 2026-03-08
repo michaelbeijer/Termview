@@ -45,12 +45,17 @@ namespace Supervertaler.Trados.Settings
         // Cached termbase list from the DB, aligned with DataGridView row indices
         private List<TermbaseInfo> _termbases = new List<TermbaseInfo>();
 
-        public TermLensSettingsForm(TermLensSettings settings, Core.PromptLibrary promptLibrary = null)
+        public TermLensSettingsForm(TermLensSettings settings,
+            Core.PromptLibrary promptLibrary = null, int defaultTab = 0)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _promptLibrary = promptLibrary ?? new Core.PromptLibrary();
             BuildUI();
             PopulateFromSettings();
+
+            // Select the requested default tab
+            if (defaultTab >= 0 && defaultTab < _tabControl.TabPages.Count)
+                _tabControl.SelectedIndex = defaultTab;
 
             // Restore persisted form size
             if (_settings.SettingsFormWidth > 0 && _settings.SettingsFormHeight > 0)
@@ -587,6 +592,8 @@ namespace Supervertaler.Trados.Settings
 
             // AI settings
             _aiSettingsPanel.PopulateFromSettings(_settings.AiSettings);
+            _aiSettingsPanel.SetAvailableTermbases(_termbases,
+                _settings.AiSettings?.DisabledAiTermbaseIds);
 
             // Prompts
             _promptManagerPanel.PopulateFromSettings(_settings.AiSettings, _promptLibrary);

@@ -12,13 +12,13 @@ using Supervertaler.Trados.Settings;
 namespace Supervertaler.Trados
 {
     /// <summary>
-    /// Editor context menu action: "Quick add Non-Translatable Term".
+    /// Editor context menu action: "Quick-add Non-Translatable Term".
     /// Marks the selected source text as non-translatable in all Write termbases.
     /// The target term is set to the source term automatically.
     /// Triggered by Ctrl+Alt+N.
     /// </summary>
     [Action("TermLens_QuickAddNonTranslatable", typeof(EditorController),
-        Name = "Quick add non-translatable term",
+        Name = "Quick-add non-translatable term",
         Description = "Mark the selected source text as non-translatable in all write termbases (no dialog)")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 5,

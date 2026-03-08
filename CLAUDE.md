@@ -4,7 +4,7 @@
 Supervertaler for Trados is a Trados Studio 2024 (v18) plugin that brings key Supervertaler features into the Trados ecosystem. It uses a **tabbed ViewPart** with separate tabs for each feature:
 
 - **TermLens** — live inline terminology display (termbase panel) — fully implemented
-- **AI Assistant** — project-aware chat interface — tab exists as placeholder, implementation next
+- **AI Assistant** — project-aware chat interface in a separate dockable panel — fully implemented (multimodal, TM matches, AI context control)
 - **Batch Translate** — AI-powered segment translation — fully implemented (OpenAI/Anthropic/Google)
 - **Prompt Library** — domain-specific and custom prompt management — fully implemented (14 built-in prompts)
 
@@ -152,19 +152,14 @@ Source-available license (not MIT). Source code viewable/forkable for personal u
 
 ## Planned features
 
-### AI Chat Assistant (next up)
+### AI Chat Assistant (implemented)
 
-The "AI Assistant" tab in the main ViewPart is currently a placeholder. Design decisions:
+The AI Assistant is a separate dockable ViewPart (`AiAssistantViewPart` + `AiAssistantControl`) registered in `plugin.xml`. Key implementation details:
 
-- **Separate dockable ViewPart** — the chat UI needs space that a tab in the existing narrow panel can't provide. Register a second `AbstractViewPartController` in `plugin.xml` so it becomes a fully native Trados dockable panel. Users can dock it right, bottom, floating, or on a second monitor. Position/size persists across sessions automatically (Trados handles this). Many RWS AppStore plugins use multiple dockable ViewParts.
-- **The "AI Assistant" tab becomes a launcher** — shows an "Open AI Assistant" button that activates the dockable panel, plus a brief description. Alternatively, the tab could be removed entirely — the panel would just appear in Trados's View menu like any other dockable panel.
-- **Implementation**: New `AiAssistantViewPart` (extends `AbstractViewPartController`) + `AiAssistantControl` (the chat UI). Register in `Supervertaler.Trados.plugin.xml` as a separate ViewPart.
-- **Same LLM providers as Batch Translate** — OpenAI, Anthropic, Google (reuse `AiSettings` for API keys, provider/model selection).
-- **Project-aware context** — the assistant should have access to: current segment (source + target), current file info, TM matches, termbase terms from TermLens. This makes it useful for asking "why was this translated this way?" or "suggest a better translation for this term in context."
-- **Conversation history** — TBD whether to persist across sessions or keep ephemeral.
-- **Ability to apply suggestions** — the assistant should be able to insert its suggestion directly into the target segment (with user confirmation).
-- **Layout tip for laptop users** — consider showing a first-run tip suggesting users dock the Supervertaler panel to the right of the editor grid (instead of above/below) for better screen real estate usage on smaller screens.
-
-### Other planned features
-
-- **TBX support** — to be added simultaneously in both Supervertaler and this plugin
+- **Separate dockable ViewPart** — fully native Trados dockable panel. Users can dock it right, bottom, floating, or on a second monitor. Position/size persists across sessions automatically.
+- **The "AI Assistant" tab is a launcher** — shows an "Open AI Assistant" button that activates the dockable panel.
+- **Project-aware context** — the assistant has access to: current segment (source + target), termbase terms (filterable per-termbase via AI Context settings), and TM fuzzy matches (toggleable).
+- **Multimodal image support** — users can paste (Ctrl+V), drag-drop, or browse images. Each provider uses its native vision API format (OpenAI content arrays, Claude image blocks, Gemini inline_data, Ollama images array).
+- **Markdown rendering** — `MarkdownToRtf` converts LLM markdown output to RTF for display in `ChatBubble` RichTextBox controls.
+- **Apply to target** — right-click assistant responses to insert text into the active Trados segment.
+- **AI Context control** — `AiSettings.DisabledAiTermbaseIds` filters which termbases contribute terms to prompts; `AiSettings.IncludeTmMatches` toggles TM match injection into the system prompt.

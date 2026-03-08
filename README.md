@@ -51,7 +51,21 @@ As you navigate between segments in the Trados Studio editor, the TermLens panel
 
 <img width="1411" height="1015" alt="4_TermLens-in-Trados-Studio-2024-Settings-KBS" src="https://github.com/user-attachments/assets/ee14c3ae-43f3-4f76-8ec2-871a9c18e10b" />
 
-## AI Translation
+## AI Assistant — project-aware chat
+
+The AI Assistant is a separate dockable panel in Trados Studio that provides a multi-turn chat interface with full project context. Ask questions about the current segment, request alternative translations, or get explanations — all with your terminology and TM matches built into the conversation.
+
+### Features
+
+- **Dockable chat panel** — dock it right, bottom, floating, or on a second monitor; position and size persist across sessions
+- **Project-aware context** — the assistant automatically sees the current segment (source + target), matched termbase terms, and optionally TM fuzzy matches
+- **Image attachments** — paste images from clipboard (Ctrl+V), drag and drop, or browse with the attach button; images are sent to the AI using each provider's vision API
+- **Apply suggestions** — right-click any assistant response and choose "Apply to target" to insert the suggestion directly into the active segment
+- **Markdown rendering** — responses render with full formatting: headings, bold, italic, inline code, code blocks, tables, and lists
+- **AI context control** — choose which termbases contribute to AI prompts and toggle TM match inclusion from the AI Settings panel
+- **All providers supported** — OpenAI, Anthropic (Claude), Google (Gemini), Ollama, and custom OpenAI-compatible endpoints
+
+## AI Batch Translation
 
 Supervertaler for Trados includes built-in AI translation powered by OpenAI, Anthropic, and Google LLMs. Translations are glossary-aware — matched terms from your TermLens glossaries are injected into the AI prompt so the model respects your approved terminology.
 

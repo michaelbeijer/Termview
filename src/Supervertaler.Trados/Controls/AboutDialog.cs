@@ -63,7 +63,7 @@ namespace Supervertaler.Trados.Controls
             y += 20;
 
             // Email
-            var emailLink = new LinkLabel
+            var emailLink = new NoFocusCuesLinkLabel
             {
                 Text = "info@michaelbeijer.co.uk",
                 Location = new Point(leftPad, y),
@@ -130,10 +130,10 @@ namespace Supervertaler.Trados.Controls
             // Shortcuts table
             var shortcuts = new[]
             {
-                ("Alt+Down",      "Quick add term to write termbases"),
-                ("Alt+Up",        "Quick add term to project termbase"),
+                ("Alt+Down",      "Quick-add term to write termbases"),
+                ("Alt+Up",        "Quick-add term to project termbase"),
                 ("Ctrl+Alt+T",    "Add term (dialog)"),
-                ("Ctrl+Alt+N",    "Quick add non-translatable"),
+                ("Ctrl+Alt+N",    "Quick-add non-translatable"),
                 ("Ctrl+Alt+A",    "AI translate segment"),
                 ("Ctrl+Shift+G",  "Term Picker"),
                 ("Alt+1\u20269",  "Insert term from TermLens panel"),
@@ -197,7 +197,7 @@ namespace Supervertaler.Trados.Controls
 
         private void AddLink(string text, string url, int x, ref int y)
         {
-            var link = new LinkLabel
+            var link = new NoFocusCuesLinkLabel
             {
                 Text = text,
                 Location = new Point(x, y),
@@ -216,6 +216,12 @@ namespace Supervertaler.Trados.Controls
             };
             Controls.Add(link);
             y += 22;
+        }
+
+        /// <summary>LinkLabel that hides the dotted focus rectangle.</summary>
+        private class NoFocusCuesLinkLabel : LinkLabel
+        {
+            protected override bool ShowFocusCues => false;
         }
     }
 }

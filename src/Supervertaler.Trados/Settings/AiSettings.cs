@@ -57,6 +57,21 @@ namespace Supervertaler.Trados.Settings
         public string CustomSystemPrompt { get; set; }
 
         /// <summary>
+        /// IDs of termbases disabled for AI context.
+        /// Empty means all termbases contribute to AI prompts.
+        /// Separate from TermLensSettings.DisabledTermbaseIds (which controls TermLens display).
+        /// </summary>
+        [DataMember(Name = "disabledAiTermbaseIds")]
+        public List<long> DisabledAiTermbaseIds { get; set; } = new List<long>();
+
+        /// <summary>
+        /// Whether to include TM (Translation Memory) fuzzy matches in AI context.
+        /// Default: true — TM matches provide useful reference for the AI.
+        /// </summary>
+        [DataMember(Name = "includeTmMatches")]
+        public bool IncludeTmMatches { get; set; } = true;
+
+        /// <summary>
         /// Returns the selected model ID for the currently active provider.
         /// </summary>
         public string GetSelectedModel()

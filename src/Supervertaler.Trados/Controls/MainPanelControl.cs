@@ -6,14 +6,12 @@ using Sdl.Desktop.IntegrationApi.Interfaces;
 namespace Supervertaler.Trados.Controls
 {
     /// <summary>
-    /// Top-level container for the Supervertaler ViewPart.
-    /// Hosts a TabControl with tabs for each feature: TermLens (terminology),
-    /// AI Assistant, Batch Translate, etc.
-    /// The settings gear button is at the top-right, visible on all tabs.
+    /// Top-level container for the TermLens ViewPart.
+    /// Hosts the TermLensControl directly (no tabs).
+    /// The settings gear button is at the top-right.
     /// </summary>
     public class MainPanelControl : UserControl, IUIControl
     {
-        private readonly TabControl _tabControl;
         private readonly Button _btnSettings;
         private readonly Button _btnHelp;
 
@@ -22,40 +20,17 @@ namespace Supervertaler.Trados.Controls
         /// </summary>
         public event EventHandler SettingsRequested;
 
-        public MainPanelControl(TermLensControl termLensControl,
-            BatchTranslateControl batchTranslateControl)
+        public MainPanelControl(TermLensControl termLensControl)
         {
             SuspendLayout();
 
             BackColor = Color.White;
 
-            _tabControl = new TabControl
-            {
-                Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 8.5f),
-                Padding = new Point(6, 3),
-            };
-
-            // TermLens tab (terminology)
-            var termLensPage = new TabPage("TermLens");
+            // Host TermLensControl directly — no TabControl
             termLensControl.Dock = DockStyle.Fill;
-            termLensPage.Controls.Add(termLensControl);
-            _tabControl.TabPages.Add(termLensPage);
+            Controls.Add(termLensControl);
 
-            // Placeholder tabs for upcoming features
-            var aiAssistantPage = new TabPage("AI Assistant");
-            aiAssistantPage.Controls.Add(CreatePlaceholderLabel("AI Assistant \u2014 coming soon"));
-            _tabControl.TabPages.Add(aiAssistantPage);
-
-            var batchPage = new TabPage("Batch Translate");
-            batchTranslateControl.Dock = DockStyle.Fill;
-            batchPage.Controls.Add(batchTranslateControl);
-            _tabControl.TabPages.Add(batchPage);
-
-            Controls.Add(_tabControl);
-
-            // Settings gear button — floats at top-right over the tab strip,
-            // visible regardless of which tab is active
+            // Settings gear button — floats at top-right
             _btnSettings = new Button
             {
                 Text = "\u2699\uFE0E",  // gear character + text presentation selector
@@ -97,7 +72,7 @@ namespace Supervertaler.Trados.Controls
 
             Controls.Add(_btnSettings);
             Controls.Add(_btnHelp);
-            _btnSettings.BringToFront(); // render on top of the tab control
+            _btnSettings.BringToFront(); // render on top of the content
             _btnHelp.BringToFront();
 
             ResumeLayout(false);
@@ -123,16 +98,5 @@ namespace Supervertaler.Trados.Controls
             }
         }
 
-        private static Label CreatePlaceholderLabel(string text)
-        {
-            return new Label
-            {
-                Text = text,
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter,
-                ForeColor = Color.FromArgb(150, 150, 150),
-                Font = new Font("Segoe UI", 10f, FontStyle.Italic),
-            };
-        }
     }
 }

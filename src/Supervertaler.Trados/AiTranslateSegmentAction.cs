@@ -21,7 +21,7 @@ namespace Supervertaler.Trados
     {
         protected override void Execute()
         {
-            TermLensEditorViewPart.HandleAiTranslateSegment();
+            AiAssistantViewPart.HandleAiTranslateSegment();
         }
     }
 }

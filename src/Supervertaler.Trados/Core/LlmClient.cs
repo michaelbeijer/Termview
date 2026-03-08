@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Supervertaler.Trados.Models;
 using Supervertaler.Trados.Settings;
 
 namespace Supervertaler.Trados.Core
@@ -90,6 +91,32 @@ namespace Supervertaler.Trados.Core
                     return await CallGeminiAsync(prompt, systemPrompt, maxTokens, cancellationToken);
                 case LlmModels.ProviderOllama:
                     return await CallOllamaAsync(prompt, systemPrompt, maxTokens, cancellationToken);
+                default:
+                    throw new ArgumentException($"Unsupported provider: {_provider}");
+            }
+        }
+
+        /// <summary>
+        /// Sends a multi-turn chat conversation to the LLM.
+        /// Used by the AI Assistant for conversation continuity.
+        /// </summary>
+        public async Task<string> SendChatAsync(
+            List<ChatMessage> messages,
+            string systemPrompt = null,
+            int? maxTokens = null,
+            CancellationToken cancellationToken = default)
+        {
+            switch (_provider)
+            {
+                case LlmModels.ProviderOpenAi:
+                case LlmModels.ProviderCustomOpenAi:
+                    return await CallOpenAiChatAsync(messages, systemPrompt, maxTokens, cancellationToken);
+                case LlmModels.ProviderClaude:
+                    return await CallClaudeChatAsync(messages, systemPrompt, maxTokens, cancellationToken);
+                case LlmModels.ProviderGemini:
+                    return await CallGeminiChatAsync(messages, systemPrompt, maxTokens, cancellationToken);
+                case LlmModels.ProviderOllama:
+                    return await CallOllamaChatAsync(messages, systemPrompt, maxTokens, cancellationToken);
                 default:
                     throw new ArgumentException($"Unsupported provider: {_provider}");
             }
@@ -424,6 +451,280 @@ namespace Supervertaler.Trados.Core
             }
         }
 
+        // ─── Multi-Turn Chat Implementations ──────────────────────────
+
+        private async Task<string> CallOpenAiChatAsync(
+            List<ChatMessage> messages, string systemPrompt, int? maxTokens,
+            CancellationToken ct)
+        {
+            var baseUrl = _provider == LlmModels.ProviderCustomOpenAi && !string.IsNullOrEmpty(_baseUrl)
+                ? _baseUrl.TrimEnd('/')
+                : "https://api.openai.com/v1";
+
+            var url = $"{baseUrl}/chat/completions";
+            var tokens = maxTokens ?? _maxTokens;
+            var timeoutMs = _isReasoningModel ? 600_000 : _defaultTimeoutMs;
+
+            var sb = new StringBuilder();
+            sb.Append("{\"model\":").Append(JsonString(_model));
+            sb.Append(",\"messages\":[");
+
+            if (!string.IsNullOrEmpty(systemPrompt))
+            {
+                sb.Append("{\"role\":\"system\",\"content\":").Append(JsonString(systemPrompt)).Append("},");
+            }
+
+            for (int i = 0; i < messages.Count; i++)
+            {
+                var role = messages[i].Role == ChatRole.User ? "user" : "assistant";
+                sb.Append("{\"role\":").Append(JsonString(role));
+
+                if (messages[i].HasImages && role == "user")
+                {
+                    // Multimodal: content is an array of text + image_url parts
+                    sb.Append(",\"content\":[");
+                    sb.Append("{\"type\":\"text\",\"text\":").Append(JsonString(messages[i].Content)).Append("}");
+                    foreach (var img in messages[i].Images)
+                    {
+                        sb.Append(",{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:")
+                          .Append(img.MimeType).Append(";base64,").Append(ToBase64(img.Data)).Append("\"}}");
+                    }
+                    sb.Append("]");
+                }
+                else
+                {
+                    sb.Append(",\"content\":").Append(JsonString(messages[i].Content));
+                }
+
+                sb.Append("}");
+                if (i < messages.Count - 1) sb.Append(",");
+            }
+
+            sb.Append("]");
+
+            if (_isReasoningModel)
+                sb.Append(",\"max_completion_tokens\":").Append(tokens);
+            else
+            {
+                sb.Append(",\"max_tokens\":").Append(tokens);
+                sb.Append(",\"temperature\":0.3");
+            }
+
+            sb.Append("}");
+
+            using (var request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(sb.ToString(), Encoding.UTF8, "application/json");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+
+                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(ct))
+                {
+                    cts.CancelAfter(timeoutMs);
+                    var response = await Http.SendAsync(request, cts.Token);
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                        throw new HttpRequestException($"OpenAI API error {(int)response.StatusCode}: {TruncateError(body)}");
+
+                    return ExtractOpenAiContent(body);
+                }
+            }
+        }
+
+        private async Task<string> CallClaudeChatAsync(
+            List<ChatMessage> messages, string systemPrompt, int? maxTokens,
+            CancellationToken ct)
+        {
+            var url = "https://api.anthropic.com/v1/messages";
+            var tokens = maxTokens ?? _maxTokens;
+
+            var totalLen = (systemPrompt?.Length ?? 0);
+            foreach (var m in messages) totalLen += m.Content?.Length ?? 0;
+            int timeoutMs;
+            if (totalLen > 50000) timeoutMs = 300_000;
+            else if (totalLen > 20000) timeoutMs = 180_000;
+            else timeoutMs = 120_000;
+
+            var sb = new StringBuilder();
+            sb.Append("{\"model\":").Append(JsonString(_model));
+            sb.Append(",\"max_tokens\":").Append(tokens);
+
+            if (!string.IsNullOrEmpty(systemPrompt))
+                sb.Append(",\"system\":").Append(JsonString(systemPrompt));
+
+            // Claude requires alternating user/assistant messages
+            sb.Append(",\"messages\":[");
+            for (int i = 0; i < messages.Count; i++)
+            {
+                var role = messages[i].Role == ChatRole.User ? "user" : "assistant";
+                sb.Append("{\"role\":").Append(JsonString(role));
+
+                if (messages[i].HasImages && role == "user")
+                {
+                    // Multimodal: content is an array of text + image blocks
+                    sb.Append(",\"content\":[");
+                    foreach (var img in messages[i].Images)
+                    {
+                        sb.Append("{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":")
+                          .Append(JsonString(img.MimeType))
+                          .Append(",\"data\":\"").Append(ToBase64(img.Data)).Append("\"}},");
+                    }
+                    sb.Append("{\"type\":\"text\",\"text\":").Append(JsonString(messages[i].Content)).Append("}");
+                    sb.Append("]");
+                }
+                else
+                {
+                    sb.Append(",\"content\":").Append(JsonString(messages[i].Content));
+                }
+
+                sb.Append("}");
+                if (i < messages.Count - 1) sb.Append(",");
+            }
+            sb.Append("]");
+            sb.Append("}");
+
+            using (var request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(sb.ToString(), Encoding.UTF8, "application/json");
+                request.Headers.Add("x-api-key", _apiKey);
+                request.Headers.Add("anthropic-version", "2023-06-01");
+
+                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(ct))
+                {
+                    cts.CancelAfter(timeoutMs);
+                    var response = await Http.SendAsync(request, cts.Token);
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                        throw new HttpRequestException($"Claude API error {(int)response.StatusCode}: {TruncateError(body)}");
+
+                    return ExtractClaudeContent(body);
+                }
+            }
+        }
+
+        private async Task<string> CallGeminiChatAsync(
+            List<ChatMessage> messages, string systemPrompt, int? maxTokens,
+            CancellationToken ct)
+        {
+            var tokens = maxTokens ?? _maxTokens;
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_model}:generateContent?key={_apiKey}";
+
+            var sb = new StringBuilder();
+            // Gemini uses "contents" array with "user" / "model" roles
+            sb.Append("{\"contents\":[");
+            for (int i = 0; i < messages.Count; i++)
+            {
+                var role = messages[i].Role == ChatRole.User ? "user" : "model";
+                sb.Append("{\"role\":").Append(JsonString(role));
+                sb.Append(",\"parts\":[");
+
+                if (messages[i].HasImages && role == "user")
+                {
+                    // Multimodal: inline_data parts for images + text part
+                    foreach (var img in messages[i].Images)
+                    {
+                        sb.Append("{\"inline_data\":{\"mime_type\":")
+                          .Append(JsonString(img.MimeType))
+                          .Append(",\"data\":\"").Append(ToBase64(img.Data)).Append("\"}},");
+                    }
+                }
+
+                sb.Append("{\"text\":").Append(JsonString(messages[i].Content)).Append("}");
+                sb.Append("]}");
+                if (i < messages.Count - 1) sb.Append(",");
+            }
+            sb.Append("]");
+
+            if (!string.IsNullOrEmpty(systemPrompt))
+                sb.Append(",\"systemInstruction\":{\"parts\":[{\"text\":").Append(JsonString(systemPrompt)).Append("}]}");
+
+            sb.Append(",\"generationConfig\":{\"maxOutputTokens\":").Append(tokens);
+            sb.Append(",\"temperature\":0.3}");
+            sb.Append("}");
+
+            using (var request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(sb.ToString(), Encoding.UTF8, "application/json");
+
+                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(ct))
+                {
+                    cts.CancelAfter(_defaultTimeoutMs);
+                    var response = await Http.SendAsync(request, cts.Token);
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                        throw new HttpRequestException($"Gemini API error {(int)response.StatusCode}: {TruncateError(body)}");
+
+                    return ExtractGeminiContent(body);
+                }
+            }
+        }
+
+        private async Task<string> CallOllamaChatAsync(
+            List<ChatMessage> messages, string systemPrompt, int? maxTokens,
+            CancellationToken ct)
+        {
+            var endpoint = _baseUrl ?? "http://localhost:11434";
+            var url = $"{endpoint.TrimEnd('/')}/api/chat";
+            var tokens = maxTokens ?? 8192;
+
+            var sb = new StringBuilder();
+            sb.Append("{\"model\":").Append(JsonString(_model));
+            sb.Append(",\"messages\":[");
+
+            if (!string.IsNullOrEmpty(systemPrompt))
+            {
+                sb.Append("{\"role\":\"system\",\"content\":").Append(JsonString(systemPrompt)).Append("},");
+            }
+
+            for (int i = 0; i < messages.Count; i++)
+            {
+                var role = messages[i].Role == ChatRole.User ? "user" : "assistant";
+                sb.Append("{\"role\":").Append(JsonString(role));
+                sb.Append(",\"content\":").Append(JsonString(messages[i].Content));
+
+                // Ollama uses a top-level "images" array on the message for vision
+                if (messages[i].HasImages && role == "user")
+                {
+                    sb.Append(",\"images\":[");
+                    for (int j = 0; j < messages[i].Images.Count; j++)
+                    {
+                        if (j > 0) sb.Append(",");
+                        sb.Append("\"").Append(ToBase64(messages[i].Images[j].Data)).Append("\"");
+                    }
+                    sb.Append("]");
+                }
+
+                sb.Append("}");
+                if (i < messages.Count - 1) sb.Append(",");
+            }
+
+            sb.Append("]");
+            sb.Append(",\"stream\":false");
+            sb.Append(",\"options\":{\"temperature\":0.3,\"num_predict\":").Append(tokens).Append("}");
+            sb.Append("}");
+
+            var timeoutMs = GetOllamaTimeout();
+
+            using (var request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(sb.ToString(), Encoding.UTF8, "application/json");
+
+                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(ct))
+                {
+                    cts.CancelAfter(timeoutMs);
+                    var response = await Http.SendAsync(request, cts.Token);
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                        throw new HttpRequestException($"Ollama API error {(int)response.StatusCode}: {TruncateError(body)}");
+
+                    return ExtractOllamaContent(body);
+                }
+            }
+        }
+
         // ─── Response Extraction ─────────────────────────────────────
 
         private static string ExtractOpenAiContent(string json)
@@ -557,6 +858,10 @@ namespace Supervertaler.Trados.Core
             "regulatory compliance", "medical devices",
             "CAT tool tags", "memoQ tags", "Trados Studio tags"
         };
+
+        // ─── Image Helpers ───────────────────────────────────────────
+
+        private static string ToBase64(byte[] data) => Convert.ToBase64String(data);
 
         // ─── JSON Helpers ────────────────────────────────────────────
 

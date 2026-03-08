@@ -46,7 +46,7 @@ namespace Supervertaler.Trados.Settings
         public long WriteTermbaseId { get; set; } = -1;
 
         /// <summary>
-        /// IDs of termbases that receive new terms via the Add Term / Quick Add Term actions.
+        /// IDs of termbases that receive new terms via the Add Term / Quick-Add Term actions.
         /// Multiple termbases can be marked as Write targets — a new term is inserted into all of them.
         /// Empty list means no write termbases are configured.
         /// </summary>
@@ -142,6 +142,8 @@ namespace Supervertaler.Trados.Settings
                         s.AiSettings.ApiKeys = new AiApiKeys();
                     if (s.AiSettings.CustomOpenAiProfiles == null)
                         s.AiSettings.CustomOpenAiProfiles = new List<CustomOpenAiProfile>();
+                    if (s.AiSettings.DisabledAiTermbaseIds == null)
+                        s.AiSettings.DisabledAiTermbaseIds = new List<long>();
 
                     // Ensure prompt settings have safe defaults
                     if (s.AiSettings.SelectedPromptPath == null)

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using Supervertaler.Trados.Core;
+using Supervertaler.Trados.Models;
 using Supervertaler.Trados.Settings;
 
 namespace Supervertaler.Trados.Controls
@@ -37,6 +38,17 @@ namespace Supervertaler.Trados.Controls
         private TextBox _txtCustomModel;
         private TextBox _txtCustomApiKey;
         private Button _btnShowCustomKey;
+
+        // AI Context section
+        private CheckBox _chkIncludeTmMatches;
+        private CheckedListBox _clbAiTermbases;
+        private Label _lblAiContextHeader;
+        private Label _lblAiTermbases;
+        private Label _lblInfo;
+        private List<TermbaseInfo> _availableTermbases = new List<TermbaseInfo>();
+
+        // Y position right after the Test Connection row (before provider-specific panels)
+        private int _providerSectionY;
 
         private bool _keyVisible;
         private bool _customKeyVisible;
@@ -335,22 +347,101 @@ namespace Supervertaler.Trados.Controls
             });
             Controls.Add(_pnlCustom);
 
+            // Store base Y for dynamic repositioning
+            _providerSectionY = y;
+
+            // === AI Context section ===
+            _lblAiContextHeader = new Label
+            {
+                Text = "AI Context",
+                Font = headerFont,
+                ForeColor = Color.FromArgb(50, 50, 50),
+                Location = new Point(16, 0), // positioned dynamically
+                AutoSize = true
+            };
+            Controls.Add(_lblAiContextHeader);
+
+            _chkIncludeTmMatches = new CheckBox
+            {
+                Text = "Include TM matches in AI context",
+                Location = new Point(16, 0), // positioned dynamically
+                AutoSize = true,
+                ForeColor = labelColor,
+                Checked = true
+            };
+            Controls.Add(_chkIncludeTmMatches);
+
+            _lblAiTermbases = new Label
+            {
+                Text = "Termbases included in AI prompts:",
+                Location = new Point(16, 0), // positioned dynamically
+                AutoSize = true,
+                ForeColor = labelColor
+            };
+            Controls.Add(_lblAiTermbases);
+
+            _clbAiTermbases = new CheckedListBox
+            {
+                Location = new Point(16, 0), // positioned dynamically
+                Size = new Size(360, 200),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                CheckOnClick = true,
+                BorderStyle = BorderStyle.FixedSingle,
+                IntegralHeight = false,
+                HorizontalScrollbar = true
+            };
+            Controls.Add(_clbAiTermbases);
+
             // === Info label ===
-            var lblInfo = new Label
+            _lblInfo = new Label
             {
                 Text = "API keys are stored locally and never sent anywhere except to the selected provider.",
-                Location = new Point(16, y + 160),
+                Location = new Point(16, 0), // positioned dynamically
                 AutoSize = true,
                 ForeColor = Color.FromArgb(150, 150, 150),
                 Font = new Font("Segoe UI", 7.5f, FontStyle.Italic)
             };
-            Controls.Add(lblInfo);
+            Controls.Add(_lblInfo);
 
             ResumeLayout(false);
+
+            // Initial layout of dynamic controls
+            RepositionAiContextSection();
 
             // Layout adjustments that depend on parent width
             Resize += (s, e) => LayoutApiKeyRow();
             LayoutApiKeyRow();
+        }
+
+        /// <summary>
+        /// Repositions the AI Context section below the currently visible provider panel,
+        /// eliminating empty space when Ollama/Custom panels are hidden.
+        /// </summary>
+        private void RepositionAiContextSection()
+        {
+            var y = _providerSectionY;
+
+            // Add height of the visible provider panel
+            if (_pnlOllama.Visible)
+                y += _pnlOllama.Height + 8;
+            else if (_pnlCustom.Visible)
+                y += _pnlCustom.Height + 8;
+            else
+                y += 8; // small gap after Test Connection when no provider panel
+
+            _lblAiContextHeader.Location = new Point(16, y);
+            y += 26;
+
+            _chkIncludeTmMatches.Location = new Point(16, y);
+            y += 28;
+
+            _lblAiTermbases.Location = new Point(16, y);
+            y += 20;
+
+            _clbAiTermbases.Location = new Point(16, y);
+            y += _clbAiTermbases.Height + 8;
+
+            _lblInfo.Location = new Point(16, y);
         }
 
         private void LayoutApiKeyRow()
@@ -393,6 +484,27 @@ namespace Supervertaler.Trados.Controls
 
             // Custom OpenAI profiles
             PopulateCustomProfiles(settings);
+
+            // AI Context
+            _chkIncludeTmMatches.Checked = settings.IncludeTmMatches;
+        }
+
+        /// <summary>
+        /// Sets the available termbases for the AI Context section.
+        /// Called by the settings form after loading termbases from the database.
+        /// </summary>
+        public void SetAvailableTermbases(List<TermbaseInfo> termbases, List<long> disabledAiTermbaseIds)
+        {
+            _availableTermbases = termbases ?? new List<TermbaseInfo>();
+            var disabled = new HashSet<long>(disabledAiTermbaseIds ?? new List<long>());
+
+            _clbAiTermbases.Items.Clear();
+            foreach (var tb in _availableTermbases)
+            {
+                var label = $"{tb.Name} ({tb.TermCount:N0} terms)";
+                var isChecked = !disabled.Contains(tb.Id);
+                _clbAiTermbases.Items.Add(label, isChecked);
+            }
         }
 
         public void ApplyToSettings(AiSettings settings)
@@ -437,6 +549,18 @@ namespace Supervertaler.Trados.Controls
             // Custom OpenAI profiles — save current profile values first
             SaveCurrentCustomProfile(settings);
             settings.SelectedCustomProfileName = (_cmbCustomProfile.SelectedItem as CustomProfileItem)?.Name ?? "";
+
+            // AI Context
+            settings.IncludeTmMatches = _chkIncludeTmMatches.Checked;
+
+            // Build disabled AI termbase IDs from unchecked items
+            var disabledIds = new List<long>();
+            for (int i = 0; i < _clbAiTermbases.Items.Count && i < _availableTermbases.Count; i++)
+            {
+                if (!_clbAiTermbases.GetItemChecked(i))
+                    disabledIds.Add(_availableTermbases[i].Id);
+            }
+            settings.DisabledAiTermbaseIds = disabledIds;
         }
 
         // ─── Event Handlers ──────────────────────────────────────────
@@ -475,6 +599,9 @@ namespace Supervertaler.Trados.Controls
 
             // Clear status
             _lblStatus.Text = "";
+
+            // Reposition AI Context section based on visible provider panel
+            RepositionAiContextSection();
 
             _lastProviderKey = providerKey;
         }

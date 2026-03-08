@@ -12,13 +12,13 @@ using Supervertaler.Trados.Settings;
 namespace Supervertaler.Trados
 {
     /// <summary>
-    /// Editor context menu action: "Quick add term to write termbases".
+    /// Editor context menu action: "Quick-add term to write termbases".
     /// Appears in the right-click context menu and responds to Ctrl+Alt+Shift+T.
     /// Extracts selected source/target text and inserts the term directly,
     /// bypassing the AddTermDialog for faster workflow.
     /// </summary>
     [Action("TermLens_QuickAddTerm", typeof(EditorController),
-        Name = "Quick add term to write termbases",
+        Name = "Quick-add term to write termbases",
         Description = "Quickly add the selected source/target text to all write termbases (no dialog)")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 6,
@@ -48,7 +48,7 @@ namespace Supervertaler.Trados
                         "No write termbase is configured.\n\n" +
                         "Open TermLens settings (gear icon) and check the \u201cWrite\u201d column " +
                         "for the termbases where new terms should be added.",
-                        "TermLens \u2014 Quick Add Term",
+                        "TermLens \u2014 Quick-Add Term",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -58,7 +58,7 @@ namespace Supervertaler.Trados
                 {
                     MessageBox.Show(
                         "Database file not found. Please check the TermLens settings.",
-                        "TermLens \u2014 Quick Add Term",
+                        "TermLens \u2014 Quick-Add Term",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -109,7 +109,7 @@ namespace Supervertaler.Trados
                         "Both source and target text are required.\n\n" +
                         "Make sure you have an active segment with text in both " +
                         "the source and target columns.",
-                        "TermLens \u2014 Quick Add Term",
+                        "TermLens \u2014 Quick-Add Term",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -133,7 +133,7 @@ namespace Supervertaler.Trados
                     MessageBox.Show(
                         "The configured write termbases were not found in the database.\n" +
                         "Please check the TermLens settings.",
-                        "TermLens \u2014 Quick Add Term",
+                        "TermLens \u2014 Quick-Add Term",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -179,7 +179,7 @@ namespace Supervertaler.Trados
                     {
                         MessageBox.Show(
                             "This term already exists in the termbase.",
-                            "TermLens \u2014 Quick Add Term",
+                            "TermLens \u2014 Quick-Add Term",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
@@ -188,7 +188,7 @@ namespace Supervertaler.Trados
                     MessageBox.Show(
                         $"Failed to add term: {ex.Message}\n\n" +
                         "The database may be locked by another application.",
-                        "TermLens \u2014 Quick Add Term",
+                        "TermLens \u2014 Quick-Add Term",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }

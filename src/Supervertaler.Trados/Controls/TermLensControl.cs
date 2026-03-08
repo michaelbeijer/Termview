@@ -70,7 +70,7 @@ namespace Supervertaler.Trados.Controls
                 Dock = DockStyle.Top,
                 Height = 28,
                 BackColor = Color.FromArgb(245, 245, 245),
-                Padding = new Padding(6, 2, 2, 2)
+                Padding = new Padding(6, 2, 56, 2)  // 56px right padding for gear/help buttons that float on top
             };
 
             _headerLabel = new Label
