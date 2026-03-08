@@ -87,7 +87,7 @@ namespace Supervertaler.Trados.Core
 
         /// <summary>
         /// Returns all unique term entries from the in-memory index.
-        /// Used for glossary injection into AI translation prompts.
+        /// Used for termbase injection into AI translation prompts.
         /// </summary>
         public List<TermEntry> GetAllEntries()
         {

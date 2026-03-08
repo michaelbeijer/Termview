@@ -12,13 +12,13 @@ using Supervertaler.Trados.Settings;
 namespace Supervertaler.Trados
 {
     /// <summary>
-    /// Keyboard-only action: "Quick add Term to Project Glossary".
+    /// Keyboard-only action: "Quick add Term to Project Termbase".
     /// Responds to Alt+Up. Extracts selected source/target text and inserts
-    /// the term directly into the project glossary, bypassing the AddTermDialog.
+    /// the term directly into the project termbase, bypassing the AddTermDialog.
     /// </summary>
     [Action("TermLens_QuickAddProjectTerm", typeof(EditorController),
-        Name = "Quick add Term to project glossary",
-        Description = "Quickly add the selected source/target text to the project glossary (no dialog)")]
+        Name = "Quick add term to project termbase",
+        Description = "Quickly add the selected source/target text to the project termbase (no dialog)")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 7,
         DisplayType.Default, "", false)]
@@ -40,13 +40,13 @@ namespace Supervertaler.Trados
 
                 var settings = TermLensSettings.Load();
 
-                // Validate project glossary is configured
+                // Validate project termbase is configured
                 if (settings.ProjectTermbaseId < 0)
                 {
                     MessageBox.Show(
-                        "No project glossary is configured.\n\n" +
+                        "No project termbase is configured.\n\n" +
                         "Open TermLens settings (gear icon) and check the \u201cProject\u201d column " +
-                        "for the glossary that should receive project-specific terms.",
+                        "for the termbase that should receive project-specific terms.",
                         "TermLens \u2014 Quick Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -56,47 +56,37 @@ namespace Supervertaler.Trados
                 if (string.IsNullOrEmpty(settings.TermbasePath) || !File.Exists(settings.TermbasePath))
                 {
                     MessageBox.Show(
-                        "Termbase file not found. Please check the TermLens settings.",
+                        "Database file not found. Please check the TermLens settings.",
                         "TermLens \u2014 Quick Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
                 // Get text from source and target segments
-                string sourceText = "";
-                string targetText = "";
+                string fullSource = doc.ActiveSegmentPair?.Source?.ToString() ?? "";
+                string fullTarget = doc.ActiveSegmentPair?.Target?.ToString() ?? "";
+                string sourceText = fullSource;
+                string targetText = fullTarget;
 
                 try
                 {
-                    // Try to get selected text first, fall back to full segment
-                    if (doc.ActiveSegmentPair?.Source != null)
-                        sourceText = doc.ActiveSegmentPair.Source.ToString() ?? "";
-                    if (doc.ActiveSegmentPair?.Target != null)
-                        targetText = doc.ActiveSegmentPair.Target.ToString() ?? "";
-
-                    // If there is an active selection, prefer it
+                    // If there is an active selection, expand it to full word boundaries
                     var selection = doc.Selection;
                     if (selection != null)
                     {
                         try
                         {
-                            if (selection.Source != null)
-                            {
-                                var srcSel = selection.Source.ToString();
-                                if (!string.IsNullOrWhiteSpace(srcSel))
-                                    sourceText = srcSel;
-                            }
+                            var srcSel = selection.Source?.ToString();
+                            if (!string.IsNullOrWhiteSpace(srcSel))
+                                sourceText = SelectionExpander.ExpandToWordBoundaries(fullSource, srcSel);
                         }
                         catch { /* Selection may not be available */ }
 
                         try
                         {
-                            if (selection.Target != null)
-                            {
-                                var tgtSel = selection.Target.ToString();
-                                if (!string.IsNullOrWhiteSpace(tgtSel))
-                                    targetText = tgtSel;
-                            }
+                            var tgtSel = selection.Target?.ToString();
+                            if (!string.IsNullOrWhiteSpace(tgtSel))
+                                targetText = SelectionExpander.ExpandToWordBoundaries(fullTarget, tgtSel);
                         }
                         catch { /* Selection may not be available */ }
                     }
@@ -104,10 +94,8 @@ namespace Supervertaler.Trados
                 catch
                 {
                     // Fall back to full segment text
-                    if (doc.ActiveSegmentPair?.Source != null)
-                        sourceText = doc.ActiveSegmentPair.Source.ToString() ?? "";
-                    if (doc.ActiveSegmentPair?.Target != null)
-                        targetText = doc.ActiveSegmentPair.Target.ToString() ?? "";
+                    sourceText = fullSource;
+                    targetText = fullTarget;
                 }
 
                 sourceText = sourceText.Trim();
@@ -136,7 +124,7 @@ namespace Supervertaler.Trados
                 if (projectTermbase == null)
                 {
                     MessageBox.Show(
-                        "The configured project glossary was not found in the database.\n" +
+                        "The configured project termbase was not found in the database.\n" +
                         "Please check the TermLens settings.",
                         "TermLens \u2014 Quick Add to Project",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -178,6 +166,13 @@ namespace Supervertaler.Trados
                         };
                         TermLensEditorViewPart.NotifyTermInserted(
                             new List<Models.TermEntry> { entry });
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            "This term already exists in the termbase.",
+                            "TermLens \u2014 Quick Add to Project",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
                 catch (Exception ex)

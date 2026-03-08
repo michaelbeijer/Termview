@@ -5,18 +5,18 @@ using System.Windows.Forms;
 namespace Supervertaler.Trados.Controls
 {
     /// <summary>
-    /// Dialog for creating a new glossary (termbase) inside a database.
-    /// Collects glossary name, source language, and target language.
+    /// Dialog for creating a new termbase inside a database.
+    /// Collects the termbase name, source language, and target language.
     /// </summary>
-    public class NewGlossaryDialog : Form
+    public class NewTermbaseDialog : Form
     {
         private TextBox _txtName;
         private TextBox _txtSourceLang;
         private TextBox _txtTargetLang;
         private Button _btnCreate;
 
-        /// <summary>The glossary name entered by the user.</summary>
-        public string GlossaryName => _txtName.Text.Trim();
+        /// <summary>The termbase name entered by the user.</summary>
+        public string TermbaseName => _txtName.Text.Trim();
 
         /// <summary>The source language code entered by the user.</summary>
         public string SourceLang => _txtSourceLang.Text.Trim();
@@ -24,9 +24,9 @@ namespace Supervertaler.Trados.Controls
         /// <summary>The target language code entered by the user.</summary>
         public string TargetLang => _txtTargetLang.Text.Trim();
 
-        public NewGlossaryDialog()
+        public NewTermbaseDialog()
         {
-            Text = "New Glossary";
+            Text = "New Termbase";
             Font = new Font("Segoe UI", 9f);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -39,10 +39,10 @@ namespace Supervertaler.Trados.Controls
             int inputWidth = ClientSize.Width - 32;
             int halfWidth = (inputWidth - 8) / 2;
 
-            // Glossary name
+            // Termbase name
             Controls.Add(new Label
             {
-                Text = "Glossary name:",
+                Text = "Termbase name:",
                 Location = new Point(16, y),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(80, 80, 80)

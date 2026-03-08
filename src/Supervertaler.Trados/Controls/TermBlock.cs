@@ -34,7 +34,7 @@ namespace Supervertaler.Trados.Controls
         private readonly List<TermEntry> _entries;
         private readonly string _sourceText;
         private readonly int _shortcutIndex; // -1 = no shortcut
-        private readonly bool _isProjectGlossary;
+        private readonly bool _isProjectTermbase;
         private readonly bool _isNonTranslatable;
 
         public event EventHandler<TermInsertEventArgs> TermInsertRequested;
@@ -43,12 +43,12 @@ namespace Supervertaler.Trados.Controls
         public event EventHandler<TermEditEventArgs> TermNonTranslatableToggled;
 
         public TermBlock(string sourceText, List<TermEntry> entries, int shortcutIndex = -1,
-            bool isProjectGlossary = false, bool isNonTranslatable = false)
+            bool isProjectTermbase = false, bool isNonTranslatable = false)
         {
             _sourceText = sourceText;
             _entries = entries ?? new List<TermEntry>();
             _shortcutIndex = shortcutIndex;
-            _isProjectGlossary = isProjectGlossary;
+            _isProjectTermbase = isProjectTermbase;
             _isNonTranslatable = isNonTranslatable;
 
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
@@ -64,7 +64,11 @@ namespace Supervertaler.Trados.Controls
             editItem.Click += (s, ev) =>
             {
                 if (PrimaryEntry != null)
-                    TermEditRequested?.Invoke(this, new TermEditEventArgs { Entry = PrimaryEntry });
+                    TermEditRequested?.Invoke(this, new TermEditEventArgs
+                    {
+                        Entry = PrimaryEntry,
+                        AllEntries = _entries.AsReadOnly()
+                    });
             };
             contextMenu.Items.Add(editItem);
 
@@ -89,10 +93,10 @@ namespace Supervertaler.Trados.Controls
         }
 
         /// <summary>
-        /// True when the primary entry's termbase is marked as a project glossary by the user.
-        /// Controls background color: pink for project glossaries, blue for others.
+        /// True when the primary entry's termbase is marked as a project termbase by the user.
+        /// Controls background color: pink for project termbases, blue for others.
         /// </summary>
-        public bool IsProjectGlossary => _isProjectGlossary;
+        public bool IsProjectTermbase => _isProjectTermbase;
         public bool IsNonTranslatable => _isNonTranslatable;
         public TermEntry PrimaryEntry => _entries.Count > 0 ? _entries[0] : null;
         public IReadOnlyList<TermEntry> Entries => _entries;
@@ -183,7 +187,7 @@ namespace Supervertaler.Trados.Controls
             Color bgColor;
             if (_isNonTranslatable)
                 bgColor = _isHovered ? NonTranslatableHover : NonTranslatableBg;
-            else if (IsProjectGlossary)
+            else if (IsProjectTermbase)
                 bgColor = _isHovered ? ProjectHover : ProjectBg;
             else
                 bgColor = _isHovered ? RegularHover : RegularBg;
@@ -225,7 +229,7 @@ namespace Supervertaler.Trados.Controls
                 Color badgeColor;
                 if (_isNonTranslatable)
                     badgeColor = Color.FromArgb(180, 150, 50);
-                else if (IsProjectGlossary)
+                else if (IsProjectTermbase)
                     badgeColor = Color.FromArgb(200, 100, 150);
                 else
                     badgeColor = Color.FromArgb(90, 140, 210);
@@ -275,6 +279,7 @@ namespace Supervertaler.Trados.Controls
                     var line = $"{entry.SourceTerm} \u2192 {entry.TargetTerm}";
                     if (!string.IsNullOrEmpty(entry.TermbaseName))
                         line += $" [{entry.TermbaseName}]";
+                    line += $" (ID {entry.Id})";
                     lines.Add(line);
 
                     foreach (var syn in entry.TargetSynonyms)
@@ -349,5 +354,11 @@ namespace Supervertaler.Trados.Controls
     public class TermEditEventArgs : EventArgs
     {
         public TermEntry Entry { get; set; }
+
+        /// <summary>
+        /// All entries from all termbases for this matched term.
+        /// Used to enable multi-termbase editing in the editor dialog.
+        /// </summary>
+        public IReadOnlyList<TermEntry> AllEntries { get; set; }
     }
 }

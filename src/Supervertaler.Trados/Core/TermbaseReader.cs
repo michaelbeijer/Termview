@@ -20,6 +20,7 @@ namespace Supervertaler.Trados.Core
         private readonly string _dbPath;
         private bool _disposed;
         private bool _hasNonTranslatableColumn;
+        private bool _hasTermUuidColumn;
 
         public TermbaseReader(string dbPath)
         {
@@ -54,6 +55,7 @@ namespace Supervertaler.Trados.Core
                 _connection = new SqliteConnection(connStr);
                 _connection.Open();
                 _hasNonTranslatableColumn = HasColumn(_connection, "termbase_terms", "is_nontranslatable");
+                _hasTermUuidColumn = HasColumn(_connection, "termbase_terms", "term_uuid");
                 return true;
             }
             catch (Exception ex)
@@ -116,6 +118,7 @@ namespace Supervertaler.Trados.Core
             var normalised = searchTerm.Trim();
 
             var ntCol = _hasNonTranslatableColumn ? ", t.is_nontranslatable" : "";
+            var uuidCol = _hasTermUuidColumn ? ", t.term_uuid" : "";
             var sql = $@"
                 SELECT t.id, t.source_term, t.target_term, t.termbase_id,
                        t.source_lang, t.target_lang, t.definition, t.domain,
@@ -124,6 +127,7 @@ namespace Supervertaler.Trados.Core
                        tb.is_project_termbase,
                        COALESCE(tb.ranking, 99) AS ranking
                        {ntCol}
+                       {uuidCol}
                 FROM termbase_terms t
                 LEFT JOIN termbases tb ON CAST(t.termbase_id AS INTEGER) = tb.id
                 WHERE (LOWER(t.source_term) = LOWER(@term)
@@ -168,6 +172,7 @@ namespace Supervertaler.Trados.Core
             if (_connection == null) return index;
 
             var ntCol = _hasNonTranslatableColumn ? ", t.is_nontranslatable" : "";
+            var uuidCol = _hasTermUuidColumn ? ", t.term_uuid" : "";
             var sql = $@"
                 SELECT t.id, t.source_term, t.target_term, t.termbase_id,
                        t.source_lang, t.target_lang, t.definition, t.domain,
@@ -176,6 +181,7 @@ namespace Supervertaler.Trados.Core
                        tb.is_project_termbase,
                        COALESCE(tb.ranking, 99) AS ranking
                        {ntCol}
+                       {uuidCol}
                 FROM termbase_terms t
                 LEFT JOIN termbases tb ON CAST(t.termbase_id AS INTEGER) = tb.id
                 WHERE COALESCE(t.forbidden, 0) = 0";
@@ -216,6 +222,9 @@ namespace Supervertaler.Trados.Core
             // Second pass: bulk-load all target synonyms into a dictionary
             var synonymsByTermId = BulkLoadTargetSynonyms();
 
+            // Third pass: bulk-load source synonyms for indexing
+            var sourceSynonymsByTermId = BulkLoadSourceSynonyms();
+
             // Build the index and hydrate synonyms
             foreach (var entry in allEntries)
             {
@@ -236,6 +245,28 @@ namespace Supervertaler.Trados.Core
                     if (!index.ContainsKey(stripped))
                         index[stripped] = new List<TermEntry>();
                     index[stripped].Add(entry);
+                }
+
+                // Index source synonyms as additional keys pointing to the same entry
+                if (sourceSynonymsByTermId.TryGetValue(entry.Id, out var srcSyns))
+                {
+                    foreach (var synText in srcSyns)
+                    {
+                        var synKey = synText.Trim().ToLowerInvariant();
+                        if (string.IsNullOrEmpty(synKey) || synKey == key) continue;
+
+                        if (!index.ContainsKey(synKey))
+                            index[synKey] = new List<TermEntry>();
+                        index[synKey].Add(entry);
+
+                        var synStripped = synKey.TrimEnd('.', '!', '?', ',', ';', ':');
+                        if (synStripped != synKey && synStripped.Length > 0)
+                        {
+                            if (!index.ContainsKey(synStripped))
+                                index[synStripped] = new List<TermEntry>();
+                            index[synStripped].Add(entry);
+                        }
+                    }
                 }
             }
 
@@ -303,6 +334,44 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
+        /// Bulk-loads all source synonyms in one query.
+        /// Returns a dictionary mapping term_id → list of synonym texts.
+        /// Used by LoadAllTerms() to index source synonyms for matching.
+        /// </summary>
+        private Dictionary<long, List<string>> BulkLoadSourceSynonyms()
+        {
+            var result = new Dictionary<long, List<string>>();
+            if (_connection == null) return result;
+
+            // Check if the table exists (older databases might not have it)
+            if (!HasTable(_connection, "termbase_synonyms"))
+                return result;
+
+            const string sql = @"
+                SELECT term_id, synonym_text FROM termbase_synonyms
+                WHERE language = 'source' AND forbidden = 0
+                ORDER BY term_id, display_order ASC";
+
+            using (var cmd = new SqliteCommand(sql, _connection))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    if (reader.IsDBNull(1)) continue;
+
+                    var termId = reader.GetInt64(0);
+                    var text = reader.GetString(1);
+
+                    if (!result.ContainsKey(termId))
+                        result[termId] = new List<string>();
+                    result[termId].Add(text);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Helper: SQLite stores booleans as integers (0/1). Microsoft.Data.Sqlite
         /// is stricter than System.Data.SQLite about type conversions, so we read
         /// the raw value and convert ourselves.
@@ -336,26 +405,97 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Ensures the is_nontranslatable column exists on termbase_terms.
+        /// Ensures required columns exist on termbase_terms and backfills missing UUIDs.
         /// Idempotent — safe to call multiple times.
         /// </summary>
         private static void MigrateSchema(SqliteConnection conn)
         {
-            if (HasColumn(conn, "termbase_terms", "is_nontranslatable"))
-                return;
-
-            using (var cmd = new SqliteCommand(
-                "ALTER TABLE termbase_terms ADD COLUMN is_nontranslatable BOOLEAN DEFAULT 0", conn))
+            if (!HasColumn(conn, "termbase_terms", "is_nontranslatable"))
             {
-                cmd.ExecuteNonQuery();
+                using (var cmd = new SqliteCommand(
+                    "ALTER TABLE termbase_terms ADD COLUMN is_nontranslatable BOOLEAN DEFAULT 0", conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            // Ensure term_uuid column exists (for Supervertaler import/export compatibility)
+            if (!HasColumn(conn, "termbase_terms", "term_uuid"))
+            {
+                using (var cmd = new SqliteCommand(
+                    "ALTER TABLE termbase_terms ADD COLUMN term_uuid TEXT", conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Create unique index (same as Supervertaler Python app)
+                using (var cmd = new SqliteCommand(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_termbase_term_uuid ON termbase_terms(term_uuid)", conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            // Backfill missing UUIDs (same as Supervertaler's generate_missing_uuids)
+            BackfillMissingUuids(conn);
+        }
+
+        /// <summary>
+        /// Generates UUIDs for any termbase_terms rows that have NULL or empty term_uuid.
+        /// Matches Supervertaler Python's generate_missing_uuids() behaviour.
+        /// </summary>
+        private static void BackfillMissingUuids(SqliteConnection conn)
+        {
+            // Quick check: any rows need backfill?
+            using (var countCmd = new SqliteCommand(
+                "SELECT COUNT(*) FROM termbase_terms WHERE term_uuid IS NULL OR term_uuid = ''", conn))
+            {
+                var count = Convert.ToInt64(countCmd.ExecuteScalar());
+                if (count == 0) return;
+            }
+
+            using (var selectCmd = new SqliteCommand(
+                "SELECT id FROM termbase_terms WHERE term_uuid IS NULL OR term_uuid = ''", conn))
+            using (var reader = selectCmd.ExecuteReader())
+            {
+                var ids = new List<long>();
+                while (reader.Read())
+                    ids.Add(reader.GetInt64(0));
+                reader.Close();
+
+                foreach (var id in ids)
+                {
+                    using (var updateCmd = new SqliteCommand(
+                        "UPDATE termbase_terms SET term_uuid = @uuid WHERE id = @id", conn))
+                    {
+                        updateCmd.Parameters.AddWithValue("@uuid", System.Guid.NewGuid().ToString());
+                        updateCmd.Parameters.AddWithValue("@id", id);
+                        updateCmd.ExecuteNonQuery();
+                    }
+                }
             }
         }
 
         private static TermEntry ReadTermEntry(SqliteDataReader reader, bool hasNonTranslatableColumn = false)
         {
+            // Column positions: 0-13 base, 14 = is_nontranslatable (optional),
+            // next = term_uuid (optional). UUID column follows NT if both present.
+            int nextCol = 14;
+            bool isNt = false;
+            if (hasNonTranslatableColumn && reader.FieldCount > nextCol)
+            {
+                isNt = !reader.IsDBNull(nextCol) && GetBool(reader, nextCol);
+                nextCol++;
+            }
+
+            string uuid = null;
+            if (reader.FieldCount > nextCol && !reader.IsDBNull(nextCol))
+                uuid = reader.GetString(nextCol);
+
             return new TermEntry
             {
                 Id = reader.GetInt64(0),
+                TermUuid = uuid,
                 SourceTerm = reader.IsDBNull(1) ? "" : reader.GetString(1),
                 TargetTerm = reader.IsDBNull(2) ? "" : reader.GetString(2),
                 TermbaseId = reader.IsDBNull(3) ? 0 : Convert.ToInt64(reader.GetValue(3)),
@@ -369,8 +509,7 @@ namespace Supervertaler.Trados.Core
                 TermbaseName = reader.IsDBNull(11) ? "" : reader.GetString(11),
                 IsProjectTermbase = !reader.IsDBNull(12) && GetBool(reader, 12),
                 Ranking = reader.IsDBNull(13) ? 99 : reader.GetInt32(13),
-                IsNonTranslatable = hasNonTranslatableColumn && reader.FieldCount > 14
-                    && !reader.IsDBNull(14) && GetBool(reader, 14)
+                IsNonTranslatable = isNt
             };
         }
 
@@ -436,13 +575,34 @@ namespace Supervertaler.Trados.Core
                 conn.Open();
                 MigrateSchema(conn);
 
+                // Skip if an entry with the same source+target already exists in this termbase
+                const string checkSql = @"
+                    SELECT id FROM termbase_terms
+                    WHERE CAST(termbase_id AS INTEGER) = @tbId
+                      AND LOWER(TRIM(source_term)) = LOWER(@source)
+                      AND LOWER(TRIM(target_term)) = LOWER(@target)
+                    LIMIT 1";
+
+                using (var check = new SqliteCommand(checkSql, conn))
+                {
+                    check.Parameters.AddWithValue("@tbId", termbaseId);
+                    check.Parameters.AddWithValue("@source", sourceTerm.Trim());
+                    check.Parameters.AddWithValue("@target", targetTerm.Trim());
+
+                    var existing = check.ExecuteScalar();
+                    if (existing != null)
+                        return -1; // duplicate — already exists
+                }
+
                 const string sql = @"
                     INSERT INTO termbase_terms
                         (source_term, target_term, termbase_id, source_lang, target_lang,
-                         definition, domain, notes, forbidden, case_sensitive, is_nontranslatable)
+                         definition, domain, notes, forbidden, case_sensitive, is_nontranslatable,
+                         term_uuid)
                     VALUES
                         (@source, @target, @tbId, @srcLang, @tgtLang,
-                         @def, @domain, @notes, 0, 0, @nt);
+                         @def, @domain, @notes, 0, 0, @nt,
+                         @uuid);
                     SELECT last_insert_rowid();";
 
                 using (var cmd = new SqliteCommand(sql, conn))
@@ -456,6 +616,7 @@ namespace Supervertaler.Trados.Core
                     cmd.Parameters.AddWithValue("@domain", domain ?? "");
                     cmd.Parameters.AddWithValue("@notes", notes ?? "");
                     cmd.Parameters.AddWithValue("@nt", isNonTranslatable ? 1 : 0);
+                    cmd.Parameters.AddWithValue("@uuid", System.Guid.NewGuid().ToString());
 
                     var result = cmd.ExecuteScalar();
                     return result != null ? Convert.ToInt64(result) : -1;
@@ -488,17 +649,37 @@ namespace Supervertaler.Trados.Core
 
                 using (var txn = conn.BeginTransaction())
                 {
+                    const string checkSql = @"
+                        SELECT id FROM termbase_terms
+                        WHERE CAST(termbase_id AS INTEGER) = @tbId
+                          AND LOWER(TRIM(source_term)) = LOWER(@source)
+                          AND LOWER(TRIM(target_term)) = LOWER(@target)
+                        LIMIT 1";
+
                     const string sql = @"
                         INSERT INTO termbase_terms
                             (source_term, target_term, termbase_id, source_lang, target_lang,
-                             definition, domain, notes, forbidden, case_sensitive, is_nontranslatable)
+                             definition, domain, notes, forbidden, case_sensitive, is_nontranslatable,
+                             term_uuid)
                         VALUES
                             (@source, @target, @tbId, @srcLang, @tgtLang,
-                             @def, '', '', 0, 0, @nt);
+                             @def, '', '', 0, 0, @nt,
+                             @uuid);
                         SELECT last_insert_rowid();";
 
                     foreach (var tb in termbases)
                     {
+                        // Skip if duplicate already exists in this termbase
+                        using (var check = new SqliteCommand(checkSql, conn, txn))
+                        {
+                            check.Parameters.AddWithValue("@tbId", tb.Id);
+                            check.Parameters.AddWithValue("@source", sourceTerm.Trim());
+                            check.Parameters.AddWithValue("@target", targetTerm.Trim());
+
+                            if (check.ExecuteScalar() != null)
+                                continue; // duplicate — skip this termbase
+                        }
+
                         using (var cmd = new SqliteCommand(sql, conn, txn))
                         {
                             cmd.Parameters.AddWithValue("@source", sourceTerm.Trim());
@@ -508,6 +689,7 @@ namespace Supervertaler.Trados.Core
                             cmd.Parameters.AddWithValue("@tgtLang", tb.TargetLang);
                             cmd.Parameters.AddWithValue("@def", definition ?? "");
                             cmd.Parameters.AddWithValue("@nt", isNonTranslatable ? 1 : 0);
+                            cmd.Parameters.AddWithValue("@uuid", System.Guid.NewGuid().ToString());
 
                             var result = cmd.ExecuteScalar();
                             var newId = result != null ? Convert.ToInt64(result) : -1;
@@ -523,8 +705,89 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
+        /// Inserts multiple non-translatable terms into a single termbase.
+        /// Each term text is used as both source_term and target_term, with
+        /// is_nontranslatable = 1. Uses a single connection and transaction.
+        /// </summary>
+        /// <returns>List of (termText, newRowId) pairs for successful inserts.</returns>
+        public static List<(string term, long newId)> InsertNonTranslatableBatch(
+            string dbPath, long termbaseId,
+            string sourceLang, string targetLang,
+            List<string> terms)
+        {
+            var results = new List<(string, long)>();
+
+            var connStr = new SqliteConnectionStringBuilder
+            {
+                DataSource = dbPath,
+                Mode = SqliteOpenMode.ReadWrite
+            }.ToString();
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                MigrateSchema(conn);
+
+                using (var txn = conn.BeginTransaction())
+                {
+                    const string checkSql = @"
+                        SELECT id FROM termbase_terms
+                        WHERE CAST(termbase_id AS INTEGER) = @tbId
+                          AND LOWER(TRIM(source_term)) = LOWER(@source)
+                        LIMIT 1";
+
+                    const string sql = @"
+                        INSERT INTO termbase_terms
+                            (source_term, target_term, termbase_id, source_lang, target_lang,
+                             definition, domain, notes, forbidden, case_sensitive,
+                             is_nontranslatable, term_uuid)
+                        VALUES
+                            (@source, @target, @tbId, @srcLang, @tgtLang,
+                             '', '', '', 0, 0, 1, @uuid);
+                        SELECT last_insert_rowid();";
+
+                    foreach (var term in terms)
+                    {
+                        var trimmed = term.Trim();
+                        if (string.IsNullOrEmpty(trimmed)) continue;
+
+                        // Skip if this term already exists in the termbase (by source term, since NT has source = target)
+                        using (var check = new SqliteCommand(checkSql, conn, txn))
+                        {
+                            check.Parameters.AddWithValue("@tbId", termbaseId);
+                            check.Parameters.AddWithValue("@source", trimmed);
+
+                            if (check.ExecuteScalar() != null)
+                                continue; // duplicate — skip
+                        }
+
+                        using (var cmd = new SqliteCommand(sql, conn, txn))
+                        {
+                            cmd.Parameters.AddWithValue("@source", trimmed);
+                            cmd.Parameters.AddWithValue("@target", trimmed);
+                            cmd.Parameters.AddWithValue("@tbId", termbaseId);
+                            cmd.Parameters.AddWithValue("@srcLang", sourceLang);
+                            cmd.Parameters.AddWithValue("@tgtLang", targetLang);
+                            cmd.Parameters.AddWithValue("@uuid", System.Guid.NewGuid().ToString());
+
+                            var result = cmd.ExecuteScalar();
+                            var newId = result != null ? Convert.ToInt64(result) : -1;
+                            if (newId > 0)
+                                results.Add((trimmed, newId));
+                        }
+                    }
+                    txn.Commit();
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
         /// Updates an existing term's source, target, definition, domain, and notes
         /// using a short-lived ReadWrite connection (same pattern as InsertTerm).
+        /// Throws InvalidOperationException if the edit would create a duplicate
+        /// (same source+target in the same termbase, different row ID).
         /// </summary>
         /// <returns>True if the row was updated, false if the term ID was not found.</returns>
         public static bool UpdateTerm(string dbPath, long termId,
@@ -542,6 +805,27 @@ namespace Supervertaler.Trados.Core
             {
                 conn.Open();
                 MigrateSchema(conn);
+
+                // Check for duplicate: another entry with the same source+target in the same termbase
+                const string dupSql = @"
+                    SELECT COUNT(*) FROM termbase_terms
+                    WHERE id <> @id
+                      AND CAST(termbase_id AS INTEGER) = (
+                          SELECT CAST(termbase_id AS INTEGER) FROM termbase_terms WHERE id = @id)
+                      AND LOWER(TRIM(source_term)) = LOWER(@source)
+                      AND LOWER(TRIM(target_term)) = LOWER(@target)";
+
+                using (var dup = new SqliteCommand(dupSql, conn))
+                {
+                    dup.Parameters.AddWithValue("@id", termId);
+                    dup.Parameters.AddWithValue("@source", sourceTerm.Trim());
+                    dup.Parameters.AddWithValue("@target", targetTerm.Trim());
+
+                    var count = Convert.ToInt64(dup.ExecuteScalar());
+                    if (count > 0)
+                        throw new InvalidOperationException(
+                            "A term with the same source and target already exists in this termbase.");
+                }
 
                 const string sql = @"
                     UPDATE termbase_terms
@@ -644,8 +928,8 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Loads all terms belonging to a specific glossary, for use in the
-        /// Glossary Editor dialog. Uses a short-lived ReadOnly connection.
+        /// Loads all terms belonging to a specific termbase, for use in the
+        /// Termbase Editor dialog. Uses a short-lived ReadOnly connection.
         /// </summary>
         public static List<TermEntry> GetAllTermsByTermbaseId(string dbPath, long termbaseId)
         {
@@ -662,7 +946,9 @@ namespace Supervertaler.Trados.Core
                 conn.Open();
 
                 var hasNtCol = HasColumn(conn, "termbase_terms", "is_nontranslatable");
+                var hasUuidCol = HasColumn(conn, "termbase_terms", "term_uuid");
                 var ntCol = hasNtCol ? ", t.is_nontranslatable" : "";
+                var uuidCol = hasUuidCol ? ", t.term_uuid" : "";
                 var sql = $@"
                     SELECT t.id, t.source_term, t.target_term, t.termbase_id,
                            t.source_lang, t.target_lang, t.definition, t.domain,
@@ -671,6 +957,7 @@ namespace Supervertaler.Trados.Core
                            tb.is_project_termbase,
                            COALESCE(tb.ranking, 99) AS ranking
                            {ntCol}
+                           {uuidCol}
                     FROM termbase_terms t
                     LEFT JOIN termbases tb ON CAST(t.termbase_id AS INTEGER) = tb.id
                     WHERE CAST(t.termbase_id AS INTEGER) = @tbId
@@ -866,7 +1153,7 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Creates a new glossary (termbase entry) in an existing database.
+        /// Creates a new termbase in an existing database.
         /// </summary>
         /// <returns>The ID of the newly created termbase.</returns>
         public static long CreateTermbase(string dbPath, string name, string sourceLang, string targetLang)
@@ -900,7 +1187,7 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Deletes a glossary and all its terms from the database.
+        /// Deletes a termbase and all its terms from the database.
         /// Synonyms are cascade-deleted via FK constraint on termbase_synonyms.
         /// </summary>
         public static void DeleteTermbase(string dbPath, long termbaseId)
@@ -949,7 +1236,7 @@ namespace Supervertaler.Trados.Core
         // ==================================================================
 
         /// <summary>
-        /// Imports terms from a TSV file into the specified glossary.
+        /// Imports terms from a TSV file into the specified termbase.
         /// Handles pipe-delimited synonyms, [!forbidden] markers, and UUID tracking.
         /// </summary>
         /// <returns>Number of terms imported/updated.</returns>
@@ -1076,6 +1363,22 @@ namespace Supervertaler.Trados.Core
                         }
                         else
                         {
+                            // Check for duplicate by source+target (case-insensitive) — skip if exists
+                            using (var dup = new SqliteCommand(@"
+                                SELECT id FROM termbase_terms
+                                WHERE CAST(termbase_id AS INTEGER) = @tbId
+                                  AND LOWER(TRIM(source_term)) = LOWER(@src)
+                                  AND LOWER(TRIM(target_term)) = LOWER(@tgt)
+                                LIMIT 1", conn, tx))
+                            {
+                                dup.Parameters.AddWithValue("@tbId", termbaseId);
+                                dup.Parameters.AddWithValue("@src", srcMain);
+                                dup.Parameters.AddWithValue("@tgt", tgtMain);
+
+                                if (dup.ExecuteScalar() != null)
+                                    continue; // duplicate — skip
+                            }
+
                             // INSERT new term
                             using (var ins = new SqliteCommand(@"
                                 INSERT INTO termbase_terms
@@ -1122,7 +1425,7 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Exports all terms from a glossary to a TSV file with full metadata.
+        /// Exports all terms from a termbase to a TSV file with full metadata.
         /// Uses UTF-8 BOM encoding and pipe-delimited synonym format.
         /// </summary>
         /// <returns>Number of terms exported.</returns>
@@ -1408,6 +1711,312 @@ namespace Supervertaler.Trados.Core
                     cmd.Parameters.AddWithValue("@forbidden", synonyms[i].forbidden ? 1 : 0);
                     cmd.ExecuteNonQuery();
                 }
+            }
+        }
+
+        // ==================================================================
+        //  Synonym management (static, short-lived connections)
+        // ==================================================================
+
+        /// <summary>
+        /// Loads all synonyms (source and target) for a single term.
+        /// Used by the Term Entry Editor dialog.
+        /// </summary>
+        public static List<SynonymEntry> GetSynonyms(string dbPath, long termId)
+        {
+            var results = new List<SynonymEntry>();
+
+            var connStr = new SqliteConnectionStringBuilder
+            {
+                DataSource = dbPath,
+                Mode = SqliteOpenMode.ReadOnly
+            }.ToString();
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+
+                // Check if the table exists (older databases might not have it)
+                if (!HasTable(conn, "termbase_synonyms"))
+                    return results;
+
+                const string sql = @"
+                    SELECT id, synonym_text, language, display_order, forbidden
+                    FROM termbase_synonyms
+                    WHERE term_id = @termId
+                    ORDER BY language ASC, display_order ASC";
+
+                using (var cmd = new SqliteCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@termId", termId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            results.Add(new SynonymEntry
+                            {
+                                Id = reader.GetInt64(0),
+                                Text = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                                Language = reader.IsDBNull(2) ? "target" : reader.GetString(2),
+                                DisplayOrder = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                                Forbidden = !reader.IsDBNull(4) && GetBool(reader, 4)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Saves all synonyms for a term using delete-all-then-reinsert pattern.
+        /// Matches the desktop Supervertaler's save_synonyms() approach.
+        /// </summary>
+        public static void SaveSynonyms(string dbPath, long termId, List<SynonymEntry> synonyms)
+        {
+            var connStr = new SqliteConnectionStringBuilder
+            {
+                DataSource = dbPath,
+                Mode = SqliteOpenMode.ReadWrite
+            }.ToString();
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                MigrateSchema(conn);
+
+                using (var tx = conn.BeginTransaction())
+                {
+                    // Delete all existing synonyms for this term
+                    using (var delCmd = new SqliteCommand(
+                        "DELETE FROM termbase_synonyms WHERE term_id = @termId", conn, tx))
+                    {
+                        delCmd.Parameters.AddWithValue("@termId", termId);
+                        delCmd.ExecuteNonQuery();
+                    }
+
+                    // Re-insert with updated order
+                    if (synonyms != null)
+                    {
+                        for (int i = 0; i < synonyms.Count; i++)
+                        {
+                            var syn = synonyms[i];
+                            if (string.IsNullOrWhiteSpace(syn.Text)) continue;
+
+                            using (var cmd = new SqliteCommand(@"
+                                INSERT INTO termbase_synonyms
+                                    (term_id, synonym_text, language, display_order, forbidden)
+                                VALUES (@termId, @text, @lang, @order, @forbidden)", conn, tx))
+                            {
+                                cmd.Parameters.AddWithValue("@termId", termId);
+                                cmd.Parameters.AddWithValue("@text", syn.Text.Trim());
+                                cmd.Parameters.AddWithValue("@lang", syn.Language ?? "target");
+                                cmd.Parameters.AddWithValue("@order", i);
+                                cmd.Parameters.AddWithValue("@forbidden", syn.Forbidden ? 1 : 0);
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+                    }
+
+                    tx.Commit();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns synonym counts per term for a given termbase. Used by the Termbase Editor
+        /// to show a "3 syn." column without loading every synonym text.
+        /// </summary>
+        public static Dictionary<long, int> GetSynonymCounts(string dbPath, long termbaseId)
+        {
+            var result = new Dictionary<long, int>();
+
+            var connStr = new SqliteConnectionStringBuilder
+            {
+                DataSource = dbPath,
+                Mode = SqliteOpenMode.ReadOnly
+            }.ToString();
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+
+                if (!HasTable(conn, "termbase_synonyms"))
+                    return result;
+
+                const string sql = @"
+                    SELECT s.term_id, COUNT(*) FROM termbase_synonyms s
+                    JOIN termbase_terms t ON t.id = s.term_id
+                    WHERE CAST(t.termbase_id AS INTEGER) = @tbId
+                    GROUP BY s.term_id";
+
+                using (var cmd = new SqliteCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@tbId", termbaseId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result[reader.GetInt64(0)] = reader.GetInt32(1);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Merges multiple terms (same source term) into a single entry with synonyms.
+        /// The primary term keeps its ID; target terms from others become target synonyms.
+        /// Existing synonyms from merged entries are preserved and appended.
+        /// </summary>
+        public static void MergeTerms(string dbPath, long primaryTermId, List<long> mergeTermIds)
+        {
+            if (mergeTermIds == null || mergeTermIds.Count == 0) return;
+
+            var connStr = new SqliteConnectionStringBuilder
+            {
+                DataSource = dbPath,
+                Mode = SqliteOpenMode.ReadWrite
+            }.ToString();
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                MigrateSchema(conn);
+
+                using (var pragma = new SqliteCommand("PRAGMA foreign_keys=ON;", conn))
+                    pragma.ExecuteNonQuery();
+
+                using (var tx = conn.BeginTransaction())
+                {
+                    // Get the current max display_order for the primary term's target synonyms
+                    int maxOrder = 0;
+                    using (var cmd = new SqliteCommand(@"
+                        SELECT COALESCE(MAX(display_order), -1) FROM termbase_synonyms
+                        WHERE term_id = @id AND language = 'target'", conn, tx))
+                    {
+                        cmd.Parameters.AddWithValue("@id", primaryTermId);
+                        var val = cmd.ExecuteScalar();
+                        if (val != null && val != DBNull.Value)
+                            maxOrder = Convert.ToInt32(val) + 1;
+                    }
+
+                    // Get primary term's target_term for deduplication
+                    string primaryTarget = "";
+                    using (var cmd = new SqliteCommand(
+                        "SELECT target_term FROM termbase_terms WHERE id = @id", conn, tx))
+                    {
+                        cmd.Parameters.AddWithValue("@id", primaryTermId);
+                        var val = cmd.ExecuteScalar();
+                        if (val != null && val != DBNull.Value)
+                            primaryTarget = val.ToString();
+                    }
+
+                    // Collect existing synonym texts for deduplication
+                    var existingTexts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    existingTexts.Add(primaryTarget);
+                    using (var cmd = new SqliteCommand(@"
+                        SELECT synonym_text FROM termbase_synonyms
+                        WHERE term_id = @id AND language = 'target'", conn, tx))
+                    {
+                        cmd.Parameters.AddWithValue("@id", primaryTermId);
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                                existingTexts.Add(reader.GetString(0));
+                        }
+                    }
+
+                    foreach (var mergeId in mergeTermIds)
+                    {
+                        if (mergeId == primaryTermId) continue;
+
+                        // Get this term's target_term → add as synonym if not duplicate
+                        using (var cmd = new SqliteCommand(
+                            "SELECT target_term FROM termbase_terms WHERE id = @id", conn, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@id", mergeId);
+                            var val = cmd.ExecuteScalar();
+                            if (val != null && val != DBNull.Value)
+                            {
+                                var target = val.ToString().Trim();
+                                if (!string.IsNullOrEmpty(target) && existingTexts.Add(target))
+                                {
+                                    using (var ins = new SqliteCommand(@"
+                                        INSERT INTO termbase_synonyms
+                                            (term_id, synonym_text, language, display_order, forbidden)
+                                        VALUES (@termId, @text, 'target', @order, 0)", conn, tx))
+                                    {
+                                        ins.Parameters.AddWithValue("@termId", primaryTermId);
+                                        ins.Parameters.AddWithValue("@text", target);
+                                        ins.Parameters.AddWithValue("@order", maxOrder++);
+                                        ins.ExecuteNonQuery();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Move this term's existing synonyms to the primary term
+                        using (var cmd = new SqliteCommand(@"
+                            SELECT synonym_text, language, forbidden FROM termbase_synonyms
+                            WHERE term_id = @id ORDER BY language, display_order", conn, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@id", mergeId);
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    var text = reader.GetString(0);
+                                    var lang = reader.GetString(1);
+                                    var forbidden = !reader.IsDBNull(2) && GetBool(reader, 2);
+
+                                    if (lang == "target" && existingTexts.Add(text))
+                                    {
+                                        using (var ins = new SqliteCommand(@"
+                                            INSERT INTO termbase_synonyms
+                                                (term_id, synonym_text, language, display_order, forbidden)
+                                            VALUES (@termId, @text, @lang, @order, @forbidden)", conn, tx))
+                                        {
+                                            ins.Parameters.AddWithValue("@termId", primaryTermId);
+                                            ins.Parameters.AddWithValue("@text", text);
+                                            ins.Parameters.AddWithValue("@lang", lang);
+                                            ins.Parameters.AddWithValue("@order", maxOrder++);
+                                            ins.Parameters.AddWithValue("@forbidden", forbidden ? 1 : 0);
+                                            ins.ExecuteNonQuery();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Delete the merged term (cascade deletes its synonyms)
+                        using (var cmd = new SqliteCommand(
+                            "DELETE FROM termbase_terms WHERE id = @id", conn, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@id", mergeId);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    tx.Commit();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks whether a table exists in the database.
+        /// </summary>
+        private static bool HasTable(SqliteConnection conn, string tableName)
+        {
+            using (var cmd = new SqliteCommand(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@name", conn))
+            {
+                cmd.Parameters.AddWithValue("@name", tableName);
+                var result = cmd.ExecuteScalar();
+                return result != null && Convert.ToInt64(result) > 0;
             }
         }
 

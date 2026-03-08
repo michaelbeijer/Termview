@@ -11,7 +11,7 @@ namespace Supervertaler.Trados.Settings
 {
     /// <summary>
     /// Settings dialog for Supervertaler for Trados.
-    /// Two tabs: TermLens (glossary settings) and AI Settings (provider/model/keys).
+    /// Two tabs: TermLens (termbase settings) and AI Settings (provider/model/keys).
     /// </summary>
     public class TermLensSettingsForm : Form
     {
@@ -30,11 +30,11 @@ namespace Supervertaler.Trados.Settings
         private Label _lblTermbaseInfo;
         private DataGridView _dgvTermbases;
         private Label _lblTermbasesHeader;
-        private Button _btnAddGlossary;
-        private Button _btnRemoveGlossary;
+        private Button _btnAddTermbase;
+        private Button _btnRemoveTermbase;
         private Button _btnImport;
         private Button _btnExport;
-        private Button _btnOpenGlossary;
+        private Button _btnOpenTermbase;
         private CheckBox _chkAutoLoad;
         private NumericUpDown _nudFontSize;
 
@@ -140,10 +140,10 @@ namespace Supervertaler.Trados.Settings
             var w = page.ClientSize.Width > 0 ? page.ClientSize.Width : 530;
 
             // Use Dock-based panels for robust layout across DPI scales and resolutions.
-            // Top: termbase path, browse, info, glossary buttons (fixed height)
+            // Top: termbase path, browse, info, termbase buttons (fixed height)
             // Bottom: separator, auto-load, font size (fixed height)
             // Middle: DataGridView fills remaining space
-            var topPanel = new Panel { Dock = DockStyle.Top, Height = 138, BackColor = Color.White };
+            var topPanel = new Panel { Dock = DockStyle.Top, Height = 138, Width = w, BackColor = Color.White };
             var bottomPanel = new Panel { Dock = DockStyle.Bottom, Height = 68, BackColor = Color.White };
             var gridPanel = new Panel
             {
@@ -152,10 +152,10 @@ namespace Supervertaler.Trados.Settings
                 BackColor = Color.White
             };
 
-            // === Termbase section ===
+            // === Database section ===
             var lblSection = new Label
             {
-                Text = "Termbase",
+                Text = "Database",
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(50, 50, 50),
                 Location = new Point(10, 10),
@@ -164,7 +164,7 @@ namespace Supervertaler.Trados.Settings
 
             var lblPath = new Label
             {
-                Text = "Termbase file (.db):",
+                Text = "Database file (.db):",
                 Location = new Point(10, 36),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(80, 80, 80)
@@ -213,17 +213,17 @@ namespace Supervertaler.Trados.Settings
             };
             _lblTermbaseInfo.Width = w - 20;
 
-            // === Glossary grid (Read / Write / Project columns) ===
+            // === Termbase grid (Read / Write / Project columns) ===
             _lblTermbasesHeader = new Label
             {
-                Text = "Glossaries:",
+                Text = "Termbases:",
                 Location = new Point(10, 114),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(80, 80, 80)
             };
 
-            // Glossary management buttons (right-aligned on the Glossaries row)
-            _btnAddGlossary = new Button
+            // Termbase management buttons (right-aligned on the Termbases row)
+            _btnAddTermbase = new Button
             {
                 Text = "+",
                 Width = 26,
@@ -233,12 +233,12 @@ namespace Supervertaler.Trados.Settings
                 ForeColor = Color.FromArgb(80, 80, 80),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
-            _btnAddGlossary.FlatAppearance.BorderSize = 0;
-            _btnAddGlossary.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
-            _btnAddGlossary.Location = new Point(w - 10 - 26, 110);
-            _btnAddGlossary.Click += OnAddGlossaryClick;
+            _btnAddTermbase.FlatAppearance.BorderSize = 0;
+            _btnAddTermbase.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnAddTermbase.Location = new Point(w - 10 - 26, 110);
+            _btnAddTermbase.Click += OnAddTermbaseClick;
 
-            _btnRemoveGlossary = new Button
+            _btnRemoveTermbase = new Button
             {
                 Text = "\u2212",
                 Width = 26,
@@ -248,10 +248,10 @@ namespace Supervertaler.Trados.Settings
                 ForeColor = Color.FromArgb(80, 80, 80),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
-            _btnRemoveGlossary.FlatAppearance.BorderSize = 0;
-            _btnRemoveGlossary.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
-            _btnRemoveGlossary.Location = new Point(_btnAddGlossary.Left - 28, 110);
-            _btnRemoveGlossary.Click += OnRemoveGlossaryClick;
+            _btnRemoveTermbase.FlatAppearance.BorderSize = 0;
+            _btnRemoveTermbase.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnRemoveTermbase.Location = new Point(_btnAddTermbase.Left - 28, 110);
+            _btnRemoveTermbase.Click += OnRemoveTermbaseClick;
 
             _btnImport = new Button
             {
@@ -265,7 +265,7 @@ namespace Supervertaler.Trados.Settings
             };
             _btnImport.FlatAppearance.BorderSize = 0;
             _btnImport.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
-            _btnImport.Location = new Point(_btnRemoveGlossary.Left - _btnImport.Width - 2, 110);
+            _btnImport.Location = new Point(_btnRemoveTermbase.Left - _btnImport.Width - 2, 110);
             _btnImport.Click += OnImportClick;
 
             _btnExport = new Button
@@ -283,7 +283,7 @@ namespace Supervertaler.Trados.Settings
             _btnExport.Location = new Point(_btnImport.Left - _btnExport.Width - 2, 110);
             _btnExport.Click += OnExportClick;
 
-            _btnOpenGlossary = new Button
+            _btnOpenTermbase = new Button
             {
                 Text = "Open",
                 Width = 55,
@@ -293,10 +293,10 @@ namespace Supervertaler.Trados.Settings
                 ForeColor = Color.FromArgb(80, 80, 80),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
-            _btnOpenGlossary.FlatAppearance.BorderSize = 0;
-            _btnOpenGlossary.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
-            _btnOpenGlossary.Location = new Point(_btnExport.Left - _btnOpenGlossary.Width - 2, 110);
-            _btnOpenGlossary.Click += OnOpenGlossaryClick;
+            _btnOpenTermbase.FlatAppearance.BorderSize = 0;
+            _btnOpenTermbase.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnOpenTermbase.Location = new Point(_btnExport.Left - _btnOpenTermbase.Width - 2, 110);
+            _btnOpenTermbase.Click += OnOpenTermbaseClick;
 
             _dgvTermbases = new DataGridView
             {
@@ -356,7 +356,7 @@ namespace Supervertaler.Trados.Settings
                 Width = 72,
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
                 FillWeight = 1,
-                ToolTipText = "Mark as project glossary (shown in pink). Click header to clear."
+                ToolTipText = "Mark as project termbase (shown in pink). Click header to clear."
             };
             var colName = new DataGridViewTextBoxColumn
             {
@@ -396,7 +396,7 @@ namespace Supervertaler.Trados.Settings
             // Click column header to select/deselect all checkboxes in that column
             _dgvTermbases.ColumnHeaderMouseClick += OnColumnHeaderMouseClick;
 
-            // Double-click a glossary row to open the Glossary Editor
+            // Double-click a termbase row to open the Termbase Editor
             _dgvTermbases.CellDoubleClick += OnGridCellDoubleClick;
 
             // === Options section (inside bottomPanel, positions relative to panel) ===
@@ -411,7 +411,7 @@ namespace Supervertaler.Trados.Settings
 
             _chkAutoLoad = new CheckBox
             {
-                Text = "Automatically load termbase when Trados Studio starts",
+                Text = "Automatically load database when Trados Studio starts",
                 Location = new Point(10, 8),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(60, 60, 60)
@@ -449,7 +449,7 @@ namespace Supervertaler.Trados.Settings
             {
                 lblSection, lblPath, _txtTermbasePath, _btnCreateNew, _btnBrowse,
                 _lblTermbaseInfo, _lblTermbasesHeader,
-                _btnOpenGlossary, _btnExport, _btnImport, _btnRemoveGlossary, _btnAddGlossary
+                _btnOpenTermbase, _btnExport, _btnImport, _btnRemoveTermbase, _btnAddTermbase
             });
 
             bottomPanel.Controls.AddRange(new Control[]
@@ -530,34 +530,34 @@ namespace Supervertaler.Trados.Settings
 
         private void OnGridCellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0) return;
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
 
             // Don't open editor when double-clicking checkbox columns
             var colName = _dgvTermbases.Columns[e.ColumnIndex].Name;
             if (colName == "colRead" || colName == "colWrite" || colName == "colProject")
                 return;
 
-            OpenGlossaryEditor(e.RowIndex);
+            OpenTermbaseEditor(e.RowIndex);
         }
 
-        private void OnOpenGlossaryClick(object sender, EventArgs e)
+        private void OnOpenTermbaseClick(object sender, EventArgs e)
         {
             if (_dgvTermbases.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a glossary to open.",
+                MessageBox.Show("Select a termbase to open.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            OpenGlossaryEditor(_dgvTermbases.SelectedRows[0].Index);
+            OpenTermbaseEditor(_dgvTermbases.SelectedRows[0].Index);
         }
 
-        private void OpenGlossaryEditor(int rowIndex)
+        private void OpenTermbaseEditor(int rowIndex)
         {
             var dbPath = _txtTermbasePath.Text.Trim();
             if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
             {
-                MessageBox.Show("Please select or create a termbase file first.",
+                MessageBox.Show("Please select or create a database file first.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -567,7 +567,7 @@ namespace Supervertaler.Trados.Settings
 
             var selected = _termbases[rowIndex];
 
-            using (var editor = new GlossaryEditorDialog(dbPath, selected, _settings))
+            using (var editor = new TermbaseEditorDialog(dbPath, selected, _settings))
             {
                 editor.ShowDialog(this);
             }
@@ -596,8 +596,8 @@ namespace Supervertaler.Trados.Settings
         {
             using (var dlg = new OpenFileDialog())
             {
-                dlg.Title = "Select Supervertaler Termbase";
-                dlg.Filter = "Supervertaler Termbase (*.db)|*.db|All files (*.*)|*.*";
+                dlg.Title = "Select Supervertaler database";
+                dlg.Filter = "Supervertaler database (*.db)|*.db|All files (*.*)|*.*";
                 dlg.FilterIndex = 1;
 
                 var current = _txtTermbasePath.Text;
@@ -618,7 +618,7 @@ namespace Supervertaler.Trados.Settings
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
             {
                 _lblTermbaseInfo.Text = string.IsNullOrEmpty(path)
-                    ? "No termbase selected."
+                    ? "No database selected."
                     : "File not found.";
                 _lblTermbaseInfo.ForeColor = Color.FromArgb(160, 160, 160);
                 return;
@@ -640,7 +640,7 @@ namespace Supervertaler.Trados.Settings
                     foreach (var tb in termbases) total += tb.TermCount;
 
                     _lblTermbaseInfo.Text = termbases.Count == 1
-                        ? $"\u2713  {termbases[0].Name}  \u2014  {total:N0} terms  ({termbases[0].SourceLang} \u2192 {termbases[0].TargetLang})"
+                        ? $"\u2713  {termbases[0].Name}  \u2014  {total:N0} terms  ({LanguageUtils.ShortenLanguageName(termbases[0].SourceLang)} \u2192 {LanguageUtils.ShortenLanguageName(termbases[0].TargetLang)})"
                         : $"\u2713  {termbases.Count} termbases, {total:N0} terms total";
 
                     _lblTermbaseInfo.ForeColor = Color.FromArgb(30, 130, 60);
@@ -648,7 +648,7 @@ namespace Supervertaler.Trados.Settings
             }
             catch
             {
-                _lblTermbaseInfo.Text = "Error reading termbase.";
+                _lblTermbaseInfo.Text = "Error reading database.";
                 _lblTermbaseInfo.ForeColor = Color.FromArgb(180, 60, 60);
             }
         }
@@ -683,7 +683,7 @@ namespace Supervertaler.Trados.Settings
                             isProject,
                             tb.Name,
                             tb.TermCount.ToString("N0"),
-                            $"{tb.SourceLang} \u2192 {tb.TargetLang}");
+                            $"{LanguageUtils.ShortenLanguageName(tb.SourceLang)} \u2192 {LanguageUtils.ShortenLanguageName(tb.TargetLang)}");
                     }
                 }
             }
@@ -697,8 +697,8 @@ namespace Supervertaler.Trados.Settings
         {
             using (var dlg = new SaveFileDialog())
             {
-                dlg.Title = "Create New Termbase";
-                dlg.Filter = "Supervertaler Termbase (*.db)|*.db";
+                dlg.Title = "Create new database";
+                dlg.Filter = "Supervertaler database (*.db)|*.db";
                 dlg.FileName = "supervertaler.db";
 
                 var current = _txtTermbasePath.Text;
@@ -729,37 +729,37 @@ namespace Supervertaler.Trados.Settings
             }
         }
 
-        private void OnAddGlossaryClick(object sender, EventArgs e)
+        private void OnAddTermbaseClick(object sender, EventArgs e)
         {
             var dbPath = _txtTermbasePath.Text.Trim();
             if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
             {
-                MessageBox.Show("Please select or create a termbase file first.",
+                MessageBox.Show("Please select or create a database file first.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            using (var dlg = new NewGlossaryDialog())
+            using (var dlg = new NewTermbaseDialog())
             {
                 if (dlg.ShowDialog(this) == DialogResult.OK)
                 {
                     try
                     {
-                        TermbaseReader.CreateTermbase(dbPath, dlg.GlossaryName,
+                        TermbaseReader.CreateTermbase(dbPath, dlg.TermbaseName,
                             dlg.SourceLang, dlg.TargetLang);
                         UpdateTermbaseInfo(dbPath);
                         PopulateTermbaseList(dbPath);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Failed to create glossary:\n{ex.Message}",
+                        MessageBox.Show($"Failed to create termbase:\n{ex.Message}",
                             "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
         }
 
-        private void OnRemoveGlossaryClick(object sender, EventArgs e)
+        private void OnRemoveTermbaseClick(object sender, EventArgs e)
         {
             var dbPath = _txtTermbasePath.Text.Trim();
             if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
@@ -767,7 +767,7 @@ namespace Supervertaler.Trados.Settings
 
             if (_dgvTermbases.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a glossary first.",
+                MessageBox.Show("Select a termbase first.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -778,8 +778,8 @@ namespace Supervertaler.Trados.Settings
 
             var selected = _termbases[idx];
             var result = MessageBox.Show(
-                $"Delete glossary \"{selected.Name}\" and all its {selected.TermCount:N0} terms?\n\nThis cannot be undone.",
-                "TermLens \u2014 Delete Glossary",
+                $"Delete termbase \"{selected.Name}\" and all its {selected.TermCount:N0} terms?\n\nThis cannot be undone.",
+                "TermLens \u2014 Delete Termbase",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
 
             if (result == DialogResult.Yes)
@@ -788,7 +788,7 @@ namespace Supervertaler.Trados.Settings
                 {
                     TermbaseReader.DeleteTermbase(dbPath, selected.Id);
 
-                    // Clear write/project references if the deleted glossary was selected
+                    // Clear write/project references if the deleted termbase was selected
                     if (_settings.WriteTermbaseIds != null)
                         _settings.WriteTermbaseIds.Remove(selected.Id);
                     if (_settings.ProjectTermbaseId == selected.Id)
@@ -799,7 +799,7 @@ namespace Supervertaler.Trados.Settings
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Failed to delete glossary:\n{ex.Message}",
+                    MessageBox.Show($"Failed to delete termbase:\n{ex.Message}",
                         "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -810,14 +810,14 @@ namespace Supervertaler.Trados.Settings
             var dbPath = _txtTermbasePath.Text.Trim();
             if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
             {
-                MessageBox.Show("Please select or create a termbase file first.",
+                MessageBox.Show("Please select or create a database file first.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             if (_dgvTermbases.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a glossary to import into.",
+                MessageBox.Show("Select a termbase to import into.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -862,14 +862,14 @@ namespace Supervertaler.Trados.Settings
             var dbPath = _txtTermbasePath.Text.Trim();
             if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
             {
-                MessageBox.Show("Please select or create a termbase file first.",
+                MessageBox.Show("Please select or create a database file first.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             if (_dgvTermbases.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a glossary to export.",
+                MessageBox.Show("Select a termbase to export.",
                     "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }

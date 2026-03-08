@@ -64,9 +64,20 @@ namespace Supervertaler.Trados.Controls
                 Font = new Font("Segoe UI", 9.5f)
             };
 
+            // Use actual language names from the first match if available
+            string srcColHeader = "Source";
+            string tgtColHeader = "Target";
+            if (_matches.Count > 0 && _matches[0].PrimaryEntry != null)
+            {
+                if (!string.IsNullOrEmpty(_matches[0].PrimaryEntry.SourceLang))
+                    srcColHeader = _matches[0].PrimaryEntry.SourceLang;
+                if (!string.IsNullOrEmpty(_matches[0].PrimaryEntry.TargetLang))
+                    tgtColHeader = _matches[0].PrimaryEntry.TargetLang;
+            }
+
             _listView.Columns.Add("#", 48, HorizontalAlignment.Right);
-            _listView.Columns.Add("Source", 160, HorizontalAlignment.Left);
-            _listView.Columns.Add("Target", 210, HorizontalAlignment.Left);
+            _listView.Columns.Add(srcColHeader, 160, HorizontalAlignment.Left);
+            _listView.Columns.Add(tgtColHeader, 210, HorizontalAlignment.Left);
             _listView.Columns.Add("Termbase", 130, HorizontalAlignment.Left);
 
             PopulateMainRows();
@@ -164,7 +175,7 @@ namespace Supervertaler.Trados.Controls
                 // Color: non-translatable = yellow, project = pink, rest = blue
                 if (match.PrimaryEntry.IsNonTranslatable)
                     item.BackColor = NonTranslatableBg;
-                else if (match.IsProjectGlossary)
+                else if (match.IsProjectTermbase)
                     item.BackColor = HighPriorityBg;
                 else
                     item.BackColor = RegularBg;

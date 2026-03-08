@@ -32,7 +32,10 @@ As you navigate between segments in the Trados Studio editor, the TermLens panel
 - **Read/Write/Project termbase selection** — choose which termbases to search (Read), which receive new terms (Write — multiple allowed), and which is the project glossary (Project)
 - **Standalone database creation** — create a fresh Supervertaler-compatible termbase database from the Settings dialog, no external tools required
 - **Glossary management** — add and remove individual glossaries inside a database directly from Settings
+- **Bulk Add NT** — paste multiple non-translatable terms at once (one per line) from the Termbase Editor; duplicates are automatically skipped
+- **Duplicate prevention** — all insert and update paths check for existing entries with the same source+target in the same termbase, preventing accidental duplicates
 - **TSV import/export** — bulk import and export terms in Supervertaler's TSV format (tab-separated, pipe-delimited synonyms, `[!forbidden]` markers, UUID tracking)
+- **Help / About** — "?" button in the panel header shows version, keyboard shortcuts, and links to documentation and support
 - **Supervertaler-compatible** — reads and writes Supervertaler's SQLite termbase format directly, so you can share termbases between both tools
 - **Auto-detect** — automatically finds your Supervertaler termbase if no file is configured
 - **Remembers layout** — dialog sizes and column widths are saved and restored between sessions

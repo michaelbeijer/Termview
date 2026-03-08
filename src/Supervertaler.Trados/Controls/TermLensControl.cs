@@ -158,8 +158,8 @@ namespace Supervertaler.Trados.Controls
         }
 
         /// <summary>
-        /// Sets the project termbase ID (glossary shown in pink).
-        /// Call this whenever settings change. Pass -1 for no project glossary.
+        /// Sets the project termbase ID (shown in pink).
+        /// Call this whenever settings change. Pass -1 for no project termbase.
         /// </summary>
         public void SetProjectTermbaseId(long id)
         {
@@ -228,8 +228,8 @@ namespace Supervertaler.Trados.Controls
         }
 
         /// <summary>
-        /// Returns all loaded glossary term entries from the in-memory index.
-        /// Used for glossary injection into AI translation prompts.
+        /// Returns all loaded termbase term entries from the in-memory index.
+        /// Used for termbase injection into AI translation prompts.
         /// </summary>
         public List<TermEntry> GetAllLoadedTerms()
         {
@@ -275,7 +275,7 @@ namespace Supervertaler.Trados.Controls
 
                 if (token.HasMatch)
                 {
-                    // A term is "project" if any of its entries come from the project glossary
+                    // A term is "project" if any of its entries come from the project termbase
                     bool isProject = false;
                     if (_projectTermbaseId >= 0)
                     {
@@ -300,7 +300,22 @@ namespace Supervertaler.Trados.Controls
                         }
                     }
 
-                    var block = new TermBlock(token.Text, token.Matches, shortcutIndex, isProject, isNonTranslatable)
+                    // Sort entries so project termbase entries come first (they become PrimaryEntry),
+                    // then by ranking ASC, so the displayed target term matches the project termbase
+                    var sortedEntries = token.Matches;
+                    if (isProject && sortedEntries.Count > 1)
+                    {
+                        sortedEntries = new List<TermEntry>(sortedEntries);
+                        sortedEntries.Sort((a, b) =>
+                        {
+                            bool aProj = a.TermbaseId == _projectTermbaseId;
+                            bool bProj = b.TermbaseId == _projectTermbaseId;
+                            if (aProj != bProj) return aProj ? -1 : 1;
+                            return a.Ranking.CompareTo(b.Ranking);
+                        });
+                    }
+
+                    var block = new TermBlock(token.Text, sortedEntries, shortcutIndex, isProject, isNonTranslatable)
                     {
                         Font = Font,
                         Margin = new Padding(2, 1, 2, 1)
@@ -376,9 +391,9 @@ namespace Supervertaler.Trados.Controls
                             if (!existing.AllEntries.Contains(entry))
                                 existing.AllEntries.Add(entry);
                         }
-                        // Promote to project glossary if either occurrence is
-                        if (block.IsProjectGlossary)
-                            existing.IsProjectGlossary = true;
+                        // Promote to project termbase if either occurrence is
+                        if (block.IsProjectTermbase)
+                            existing.IsProjectTermbase = true;
                     }
                     else
                     {
@@ -389,7 +404,7 @@ namespace Supervertaler.Trados.Controls
                             SourceText = block.PrimaryEntry.SourceTerm,
                             PrimaryEntry = block.PrimaryEntry,
                             AllEntries = new List<TermEntry>(block.Entries),
-                            IsProjectGlossary = block.IsProjectGlossary
+                            IsProjectTermbase = block.IsProjectTermbase
                         });
                     }
                 }

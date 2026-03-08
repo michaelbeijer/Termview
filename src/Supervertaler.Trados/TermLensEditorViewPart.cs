@@ -129,7 +129,7 @@ namespace Supervertaler.Trados
                 ? new HashSet<long>(_settings.DisabledTermbaseIds)
                 : null;
 
-            // Push project glossary ID to the control for pink/blue coloring
+            // Push project termbase ID to the control for pink/blue coloring
             _control.Value.SetProjectTermbaseId(_settings.ProjectTermbaseId);
 
             // 1. Use the saved termbase path if set and the file exists
@@ -288,77 +288,69 @@ namespace Supervertaler.Trados
 
             SafeInvoke(() =>
             {
-                // Look up the termbase info for the entry's termbase
-                TermbaseInfo termbase = null;
-                if (!string.IsNullOrEmpty(_settings.TermbasePath) && File.Exists(_settings.TermbasePath))
+                var dbPath = _settings.TermbasePath;
+                if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath)) return;
+
+                // Multi-entry mode: look up termbase info for ALL entries
+                var allEntries = e.AllEntries;
+                if (allEntries != null && allEntries.Count > 1)
                 {
-                    using (var reader = new TermbaseReader(_settings.TermbasePath))
+                    var entryTermbases = new List<KeyValuePair<TermEntry, TermbaseInfo>>();
+                    using (var reader = new TermbaseReader(dbPath))
                     {
                         if (reader.Open())
-                            termbase = reader.GetTermbaseById(e.Entry.TermbaseId);
+                        {
+                            foreach (var entry in allEntries)
+                            {
+                                var tb = reader.GetTermbaseById(entry.TermbaseId);
+                                if (tb != null)
+                                    entryTermbases.Add(new KeyValuePair<TermEntry, TermbaseInfo>(entry, tb));
+                            }
+                        }
                     }
+
+                    if (entryTermbases.Count == 0) return;
+
+                    using (var dlg = new TermEntryEditorDialog(entryTermbases, dbPath))
+                    {
+                        var parent = _control.Value.FindForm();
+                        var result = parent != null ? dlg.ShowDialog(parent) : dlg.ShowDialog();
+
+                        if (result == DialogResult.OK || result == DialogResult.Abort)
+                        {
+                            // Force reload to rebuild index after save or delete
+                            LoadTermbase(forceReload: true);
+                            UpdateFromActiveSegment();
+                        }
+                    }
+                    return;
                 }
 
-                using (var dlg = new AddTermDialog(e.Entry, termbase))
+                // Single-entry mode (fallback)
+                TermbaseInfo termbase = null;
+                using (var reader = new TermbaseReader(dbPath))
+                {
+                    if (reader.Open())
+                        termbase = reader.GetTermbaseById(e.Entry.TermbaseId);
+                }
+
+                using (var dlg = new TermEntryEditorDialog(e.Entry, dbPath, termbase))
                 {
                     var parent = _control.Value.FindForm();
                     var result = parent != null ? dlg.ShowDialog(parent) : dlg.ShowDialog();
 
                     if (result == DialogResult.OK)
                     {
-                        if (string.IsNullOrWhiteSpace(dlg.SourceTerm) ||
-                            string.IsNullOrWhiteSpace(dlg.TargetTerm))
-                        {
-                            MessageBox.Show("Both source and target terms are required.",
-                                "TermLens", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            return;
-                        }
-
-                        try
-                        {
-                            bool updated = TermbaseReader.UpdateTerm(
-                                _settings.TermbasePath,
-                                e.Entry.Id,
-                                dlg.SourceTerm,
-                                dlg.TargetTerm,
-                                dlg.Definition,
-                                isNonTranslatable: dlg.IsNonTranslatable);
-
-                            if (updated)
-                            {
-                                // Incremental update: remove old entry, add updated one
-                                _control.Value.RemoveTermFromIndex(e.Entry.Id);
-                                var updatedEntry = new TermEntry
-                                {
-                                    Id = e.Entry.Id,
-                                    SourceTerm = dlg.SourceTerm,
-                                    TargetTerm = dlg.TargetTerm,
-                                    SourceLang = e.Entry.SourceLang,
-                                    TargetLang = e.Entry.TargetLang,
-                                    TermbaseId = e.Entry.TermbaseId,
-                                    TermbaseName = e.Entry.TermbaseName,
-                                    IsProjectTermbase = e.Entry.IsProjectTermbase,
-                                    Ranking = e.Entry.Ranking,
-                                    Definition = dlg.Definition ?? "",
-                                    Domain = e.Entry.Domain,
-                                    Notes = e.Entry.Notes,
-                                    Forbidden = e.Entry.Forbidden,
-                                    CaseSensitive = e.Entry.CaseSensitive,
-                                    IsNonTranslatable = dlg.IsNonTranslatable,
-                                    TargetSynonyms = e.Entry.TargetSynonyms
-                                };
-                                _control.Value.AddTermToIndex(updatedEntry);
-                                UpdateFromActiveSegment();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(
-                                $"Failed to update term: {ex.Message}\n\n" +
-                                "The database may be locked by another application.",
-                                "TermLens \u2014 Edit Term",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        // Term was saved (possibly with synonym changes) — force reload
+                        // to rebuild the index including source synonym keys
+                        LoadTermbase(forceReload: true);
+                        UpdateFromActiveSegment();
+                    }
+                    else if (result == DialogResult.Abort)
+                    {
+                        // Term was deleted from the editor
+                        _control.Value.RemoveTermFromIndex(e.Entry.Id);
+                        UpdateFromActiveSegment();
                     }
                 }
             });
@@ -598,8 +590,8 @@ namespace Supervertaler.Trados
                     return;
                 }
 
-                // Get glossary terms for prompt injection
-                var glossaryTerms = _control.Value.GetAllLoadedTerms();
+                // Get termbase terms for prompt injection
+                var termbaseTerms = _control.Value.GetAllLoadedTerms();
 
                 // Resolve custom prompt from library selection
                 var selectedPromptPath = _batchControl.Value.GetSelectedPromptPath();
@@ -632,7 +624,7 @@ namespace Supervertaler.Trados
                     {
                         await _batchTranslator.TranslateAsync(
                             segments, sourceLang, targetLang,
-                            aiSettings, glossaryTerms, batchSize, ct,
+                            aiSettings, termbaseTerms, batchSize, ct,
                             customPromptContent, customSystemPrompt);
                     }
                     catch (Exception ex)
@@ -957,8 +949,8 @@ namespace Supervertaler.Trados
                         return;
                     }
 
-                    // Get glossary terms for prompt injection
-                    var glossaryTerms = _control.Value.GetAllLoadedTerms();
+                    // Get termbase terms for prompt injection
+                    var termbaseTerms = _control.Value.GetAllLoadedTerms();
 
                     // Resolve custom prompt from settings (same prompt as batch translate)
                     var customPromptContent = instance.ResolveCustomPromptContent(sourceLang, targetLang);
@@ -975,7 +967,7 @@ namespace Supervertaler.Trados
                         {
                             var systemPrompt = TranslationPrompt.BuildSystemPrompt(
                                 sourceLang, targetLang,
-                                customPromptContent, glossaryTerms, customSystemPrompt);
+                                customPromptContent, termbaseTerms, customSystemPrompt);
 
                             var client = new LlmClient(
                                 capturedAiSettings.SelectedProvider,

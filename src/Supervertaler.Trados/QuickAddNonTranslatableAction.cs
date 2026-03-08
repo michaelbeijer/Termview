@@ -18,8 +18,8 @@ namespace Supervertaler.Trados
     /// Triggered by Ctrl+Alt+N.
     /// </summary>
     [Action("TermLens_QuickAddNonTranslatable", typeof(EditorController),
-        Name = "Quick Add Non-Translatable Term",
-        Description = "Mark the selected source text as non-translatable in all Write termbases (no dialog)")]
+        Name = "Quick add non-translatable term",
+        Description = "Mark the selected source text as non-translatable in all write termbases (no dialog)")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 5,
         DisplayType.Default, "", false)]
@@ -57,7 +57,7 @@ namespace Supervertaler.Trados
                 if (string.IsNullOrEmpty(settings.TermbasePath) || !File.Exists(settings.TermbasePath))
                 {
                     MessageBox.Show(
-                        "Termbase file not found. Please check the TermLens settings.",
+                        "Database file not found. Please check the TermLens settings.",
                         "TermLens \u2014 Non-Translatable",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -178,6 +178,13 @@ namespace Supervertaler.Trados
                         }
 
                         TermLensEditorViewPart.NotifyTermInserted(insertedEntries);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            "This term already exists in the termbase.",
+                            "TermLens \u2014 Non-Translatable",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
                 catch (Exception ex)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using Supervertaler.Trados.Core;
 using Supervertaler.Trados.Models;
 
 namespace Supervertaler.Trados.Controls
@@ -50,10 +51,21 @@ namespace Supervertaler.Trados.Controls
             int y = 16;
             int inputWidth = ClientSize.Width - 32;
 
+            // Use actual language names from the first write termbase if available
+            string srcLangLabel = "Source term:";
+            string tgtLangLabel = "Target term:";
+            if (writeTermbases != null && writeTermbases.Count > 0)
+            {
+                if (!string.IsNullOrEmpty(writeTermbases[0].SourceLang))
+                    srcLangLabel = LanguageUtils.ShortenLanguageName(writeTermbases[0].SourceLang) + ":";
+                if (!string.IsNullOrEmpty(writeTermbases[0].TargetLang))
+                    tgtLangLabel = LanguageUtils.ShortenLanguageName(writeTermbases[0].TargetLang) + ":";
+            }
+
             // Source term
             Controls.Add(new Label
             {
-                Text = "Source term:",
+                Text = srcLangLabel,
                 Location = new Point(16, y),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(80, 80, 80)
@@ -73,7 +85,7 @@ namespace Supervertaler.Trados.Controls
             // Target term
             Controls.Add(new Label
             {
-                Text = "Target term:",
+                Text = tgtLangLabel,
                 Location = new Point(16, y),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(80, 80, 80)
@@ -145,7 +157,7 @@ namespace Supervertaler.Trados.Controls
             if (writeTermbases != null && writeTermbases.Count > 0)
             {
                 if (writeTermbases.Count == 1)
-                    tbText = $"Will be added to: {writeTermbases[0].Name} ({writeTermbases[0].SourceLang} \u2192 {writeTermbases[0].TargetLang})";
+                    tbText = $"Will be added to: {writeTermbases[0].Name} ({LanguageUtils.ShortenLanguageName(writeTermbases[0].SourceLang)} \u2192 {LanguageUtils.ShortenLanguageName(writeTermbases[0].TargetLang)})";
                 else
                 {
                     var names = new List<string>();

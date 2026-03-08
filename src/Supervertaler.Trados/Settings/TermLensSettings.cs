@@ -54,9 +54,9 @@ namespace Supervertaler.Trados.Settings
         public List<long> WriteTermbaseIds { get; set; } = new List<long>();
 
         /// <summary>
-        /// ID of the termbase the user has marked as the "Project" glossary.
-        /// The project glossary is shown in pink; all others in blue.
-        /// -1 means no project glossary is configured.
+        /// ID of the termbase the user has marked as the "Project" termbase.
+        /// The project termbase is shown in pink; all others in blue.
+        /// -1 means no project termbase is configured.
         /// </summary>
         [DataMember(Name = "projectTermbaseId")]
         public long ProjectTermbaseId { get; set; } = -1;
@@ -78,12 +78,12 @@ namespace Supervertaler.Trados.Settings
         [DataMember(Name = "settingsFormHeight")]
         public int SettingsFormHeight { get; set; }
 
-        // ─── Glossary Editor dialog layout persistence ──────────────
-        [DataMember(Name = "glossaryEditorWidth")]
-        public int GlossaryEditorWidth { get; set; }
+        // ─── Termbase Editor dialog layout persistence ──────────────
+        [DataMember(Name = "termbaseEditorWidth")]
+        public int TermbaseEditorWidth { get; set; }
 
-        [DataMember(Name = "glossaryEditorHeight")]
-        public int GlossaryEditorHeight { get; set; }
+        [DataMember(Name = "termbaseEditorHeight")]
+        public int TermbaseEditorHeight { get; set; }
 
         // ─── Panel font size ─────────────────────────────────────────
         /// <summary>

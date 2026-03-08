@@ -7,7 +7,7 @@ namespace Supervertaler.Trados.Controls
 {
     /// <summary>
     /// Top-level container for the Supervertaler ViewPart.
-    /// Hosts a TabControl with tabs for each feature: TermLens (glossary),
+    /// Hosts a TabControl with tabs for each feature: TermLens (terminology),
     /// AI Assistant, Batch Translate, etc.
     /// The settings gear button is at the top-right, visible on all tabs.
     /// </summary>
@@ -15,6 +15,7 @@ namespace Supervertaler.Trados.Controls
     {
         private readonly TabControl _tabControl;
         private readonly Button _btnSettings;
+        private readonly Button _btnHelp;
 
         /// <summary>
         /// Fired when the user clicks the gear/settings button.
@@ -35,7 +36,7 @@ namespace Supervertaler.Trados.Controls
                 Padding = new Point(6, 3),
             };
 
-            // TermLens tab (glossary)
+            // TermLens tab (terminology)
             var termLensPage = new TabPage("TermLens");
             termLensControl.Dock = DockStyle.Fill;
             termLensPage.Controls.Add(termLensControl);
@@ -74,20 +75,52 @@ namespace Supervertaler.Trados.Controls
             _btnSettings.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
             _btnSettings.Click += (s, e) => SettingsRequested?.Invoke(this, EventArgs.Empty);
 
+            // Help/about button (?) — floats to the left of the gear button
+            _btnHelp = new Button
+            {
+                Text = "?",
+                Size = new Size(26, 22),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                TabStop = false,
+                UseCompatibleTextRendering = true,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(0, 1, 0, 0),
+                Margin = Padding.Empty
+            };
+            _btnHelp.FlatAppearance.BorderSize = 0;
+            _btnHelp.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnHelp.Click += OnHelpClick;
+
             Controls.Add(_btnSettings);
+            Controls.Add(_btnHelp);
             _btnSettings.BringToFront(); // render on top of the tab control
+            _btnHelp.BringToFront();
 
             ResumeLayout(false);
 
-            // Position gear button at top-right, and keep it there on resize
-            Resize += (s, e) => PositionSettingsButton();
-            PositionSettingsButton();
+            // Position buttons at top-right, and keep them there on resize
+            Resize += (s, e) => PositionTopButtons();
+            PositionTopButtons();
         }
 
-        private void PositionSettingsButton()
+        private void PositionTopButtons()
         {
-            if (_btnSettings == null) return;
-            _btnSettings.Location = new Point(Width - _btnSettings.Width - 2, 1);
+            if (_btnHelp == null || _btnSettings == null) return;
+            // Help "?" at far right, gear to its left
+            _btnHelp.Location = new Point(Width - _btnHelp.Width - 2, 1);
+            _btnSettings.Location = new Point(_btnHelp.Left - _btnSettings.Width, 1);
+        }
+
+        private void OnHelpClick(object sender, EventArgs e)
+        {
+            using (var dlg = new AboutDialog())
+            {
+                dlg.ShowDialog(FindForm());
+            }
         }
 
         private static Label CreatePlaceholderLabel(string text)

@@ -14,6 +14,44 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.2.0] — 2026-03-08
+
+### Added
+- **Help / About dialog** — "?" button next to the settings gear opens an About dialog
+  showing plugin version, author info, keyboard shortcuts reference, and links to
+  website, documentation, and support; email address copies to clipboard on click
+- **NT filter in Termbase Editor** — "NT only" checkbox in the toolbar filters the
+  term list to show only non-translatable entries; composes with the search filter
+- **Bulk Add NT** — "Bulk Add NT" button in the Termbase Editor opens a dialog where
+  you can paste multiple non-translatable terms (one per line) for batch import;
+  reports how many were added and how many duplicates were skipped
+- **Copy cell in Termbase Editor** — Ctrl+C now copies the current cell value instead
+  of the entire row; right-click context menu includes a "Copy cell" option
+- **Duplicate prevention** — all term insert and update paths now check for existing
+  entries with the same source and target term (case-insensitive) in the same
+  termbase; quick-add shortcuts (Alt+Down/Up, Ctrl+Alt+T, Ctrl+Alt+N) show a clear
+  message when a duplicate is detected; bulk operations report how many duplicates
+  were skipped
+
+### Changed
+- **Renamed "glossary" to "termbase"** — all user-facing labels, context menus,
+  dialogs, and settings now use "termbase" consistently instead of the previous mix
+  of "glossary" and "termbase"
+- **Shortened language names** — language pair displays throughout the UI
+  (Termbase Editor title bar, settings grid, Add Term dialog) now show short names
+  like "English" instead of "English (United States)"
+- **Sentence case context menus** — right-click menu items in the TermLens panel now
+  use sentence case ("Mark as non-translatable") instead of title case
+- **Settings dialog database label** — the file path label in settings now reads
+  "Database" instead of "Termbase" to avoid confusion with individual termbases
+  inside the database
+
+### Fixed
+- **Alt+Up word expansion** — quick-add to project termbase (Alt+Up) now expands
+  partial word selections to full word boundaries, matching Alt+Down behaviour
+
+---
+
 ## [3.1.0] — 2026-03-06
 
 ### Added

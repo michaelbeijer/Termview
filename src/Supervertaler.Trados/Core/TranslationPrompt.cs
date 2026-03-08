@@ -8,7 +8,7 @@ namespace Supervertaler.Trados.Core
 {
     /// <summary>
     /// Builds system and user prompts for AI translation, and parses batch responses.
-    /// Supports composable prompt assembly: Base → Custom → Glossary.
+    /// Supports composable prompt assembly: Base → Custom → Termbase.
     /// Ported from Python Supervertaler's UnifiedPromptLibrary / build_final_prompt().
     /// </summary>
     public static class TranslationPrompt
@@ -77,17 +77,17 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Builds the full system prompt by composing: Base → Custom Prompt → Glossary.
+        /// Builds the full system prompt by composing: Base → Custom Prompt → Termbase.
         /// This is the main entry point used by both batch and single-segment translate.
         /// </summary>
         /// <param name="sourceLang">Source language display name</param>
         /// <param name="targetLang">Target language display name</param>
         /// <param name="customPromptContent">Optional custom prompt content (from library); already variable-substituted</param>
-        /// <param name="glossaryTerms">Optional glossary terms to inject</param>
+        /// <param name="termbaseTerms">Optional termbase terms to inject</param>
         /// <param name="customSystemPrompt">Optional system prompt override (replaces base prompt entirely)</param>
         public static string BuildSystemPrompt(string sourceLang, string targetLang,
             string customPromptContent = null,
-            List<TermEntry> glossaryTerms = null,
+            List<TermEntry> termbaseTerms = null,
             string customSystemPrompt = null)
         {
             var sb = new StringBuilder(4096);
@@ -114,16 +114,16 @@ namespace Supervertaler.Trados.Core
                 sb.Append(customPromptContent);
             }
 
-            // Layer 3: Glossary injection
-            if (glossaryTerms != null && glossaryTerms.Count > 0)
+            // Layer 3: Termbase injection
+            if (termbaseTerms != null && termbaseTerms.Count > 0)
             {
                 sb.AppendLine();
                 sb.AppendLine();
-                sb.AppendLine("# GLOSSARY");
+                sb.AppendLine("# TERMBASE");
                 sb.AppendLine();
                 sb.AppendLine("Use these approved terms consistently in your translation:");
                 sb.AppendLine();
-                foreach (var term in glossaryTerms)
+                foreach (var term in termbaseTerms)
                 {
                     if (string.IsNullOrEmpty(term.SourceTerm) || string.IsNullOrEmpty(term.TargetTerm))
                         continue;

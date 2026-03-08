@@ -19,8 +19,8 @@ namespace Supervertaler.Trados
     /// Extracts selected source/target text, opens AddTermDialog, and inserts the term.
     /// </summary>
     [Action("TermLens_AddTerm", typeof(EditorController),
-        Name = "Add Term to TermLens (dialogue)",
-        Description = "Add the selected source/target text as a new term via dialogue")]
+        Name = "Add term to TermLens (dialog)",
+        Description = "Add the selected source/target text as a new term via dialog")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 8,
         DisplayType.Default, "", true)]
@@ -58,7 +58,7 @@ namespace Supervertaler.Trados
                 if (string.IsNullOrEmpty(settings.TermbasePath) || !File.Exists(settings.TermbasePath))
                 {
                     MessageBox.Show(
-                        "Termbase file not found. Please check the TermLens settings.",
+                        "Database file not found. Please check the TermLens settings.",
                         "TermLens \u2014 Add Term",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -159,6 +159,13 @@ namespace Supervertaler.Trados
                             {
                                 // Reload term index so the new term appears immediately
                                 TermLensEditorViewPart.NotifyTermAdded();
+                            }
+                            else
+                            {
+                                MessageBox.Show(
+                                    "This term already exists in the termbase.",
+                                    "TermLens \u2014 Add Term",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
                         }
                         catch (Exception ex)

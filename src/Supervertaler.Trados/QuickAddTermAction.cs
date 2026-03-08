@@ -12,14 +12,14 @@ using Supervertaler.Trados.Settings;
 namespace Supervertaler.Trados
 {
     /// <summary>
-    /// Editor context menu action: "Quick add Term to TermLens".
+    /// Editor context menu action: "Quick add term to write termbases".
     /// Appears in the right-click context menu and responds to Ctrl+Alt+Shift+T.
     /// Extracts selected source/target text and inserts the term directly,
     /// bypassing the AddTermDialog for faster workflow.
     /// </summary>
     [Action("TermLens_QuickAddTerm", typeof(EditorController),
-        Name = "Quick Add Term to Glossary Set to 'Write'",
-        Description = "Quickly add the selected source/target text to all Write termbases (no dialog)")]
+        Name = "Quick add term to write termbases",
+        Description = "Quickly add the selected source/target text to all write termbases (no dialog)")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 6,
         DisplayType.Default, "", false)]
@@ -57,7 +57,7 @@ namespace Supervertaler.Trados
                 if (string.IsNullOrEmpty(settings.TermbasePath) || !File.Exists(settings.TermbasePath))
                 {
                     MessageBox.Show(
-                        "Termbase file not found. Please check the TermLens settings.",
+                        "Database file not found. Please check the TermLens settings.",
                         "TermLens \u2014 Quick Add Term",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -174,6 +174,13 @@ namespace Supervertaler.Trados
 
                         // Incremental index update — no full DB reload
                         TermLensEditorViewPart.NotifyTermInserted(insertedEntries);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            "This term already exists in the termbase.",
+                            "TermLens \u2014 Quick Add Term",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
                 catch (Exception ex)

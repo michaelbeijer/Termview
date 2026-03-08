@@ -11,7 +11,7 @@ namespace Supervertaler.Trados
     /// Also appears in the right-click context menu in the editor.
     /// </summary>
     [Action("Supervertaler_AiTranslateSegment", typeof(EditorController),
-        Name = "AI Translate Current Segment",
+        Name = "AI translate current segment",
         Description = "Translate the active segment using the configured AI provider")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 9,
