@@ -24,7 +24,7 @@ namespace Supervertaler.Trados.Core
         /// </summary>
         public static class Topics
         {
-            public const string Overview           = "";
+            public const string Overview           = "overview";
             public const string Installation       = "installation";
             public const string GettingStarted     = "getting-started";
             public const string TermLensPanel      = "termlens";
