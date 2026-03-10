@@ -24,21 +24,22 @@ namespace Supervertaler.Trados.Core
         /// </summary>
         public static class Topics
         {
+            // GitBook sections (## headers in SUMMARY.md) become URL path prefixes.
             public const string Overview           = "";  // root of the space (README.md)
-            public const string Installation       = "installation";
-            public const string GettingStarted     = "getting-started";
-            public const string TermLensPanel      = "termlens";
-            public const string AddTermDialog      = "termlens/adding-terms";
-            public const string TermPickerDialog   = "termlens/term-picker";
-            public const string AiAssistantChat    = "ai-assistant";
-            public const string BatchTranslate     = "batch-translate";
-            public const string TermbaseEditor     = "termbase-management";
+            public const string Installation       = "getting-started/installation";
+            public const string GettingStarted     = "getting-started/getting-started";
+            public const string TermLensPanel      = "features/termlens";
+            public const string AddTermDialog      = "features/termlens/adding-terms";
+            public const string TermPickerDialog   = "features/termlens/term-picker";
+            public const string AiAssistantChat    = "features/ai-assistant";
+            public const string BatchTranslate     = "features/batch-translate";
+            public const string MultiTermSupport   = "features/multiterm-support";
+            public const string TermbaseEditor     = "terminology/termbase-management";
             public const string SettingsTermLens   = "settings/termlens";
             public const string SettingsAi         = "settings/ai-settings";
             public const string SettingsPrompts    = "settings/prompts";
-            public const string MultiTermSupport   = "multiterm-support";
-            public const string KeyboardShortcuts  = "keyboard-shortcuts";
-            public const string Troubleshooting    = "troubleshooting";
+            public const string KeyboardShortcuts  = "reference/keyboard-shortcuts";
+            public const string Troubleshooting    = "reference/troubleshooting";
         }
 
         /// <summary>
