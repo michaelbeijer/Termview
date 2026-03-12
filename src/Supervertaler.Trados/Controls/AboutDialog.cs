@@ -316,7 +316,8 @@ namespace Supervertaler.Trados.Controls
                 AutoSize = true,
                 Font = new Font("Segoe UI", 9f),
                 LinkColor = Color.FromArgb(40, 100, 180),
-                ActiveLinkColor = Color.FromArgb(30, 80, 160)
+                ActiveLinkColor = Color.FromArgb(30, 80, 160),
+                UseMnemonic = false
             };
             if (tooltip != null)
             {
