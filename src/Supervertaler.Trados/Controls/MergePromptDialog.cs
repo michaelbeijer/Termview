@@ -47,23 +47,24 @@ namespace Supervertaler.Trados.Controls
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
             ShowInTaskbar = false;
-            AutoSize = false;
-            Size = new Size(520, 310);
 
-            var contentPanel = new Panel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(20, 16, 20, 0)
-            };
+            // All controls are placed directly on the form with absolute
+            // positioning — no Dock panels, which misbehave inside Trados's
+            // WPF-hosted plugin environment.
+
+            int margin = 20;
+            int contentWidth = 460;
+            int y = 16;
 
             // --- "You are adding:" label ---
             var addingLabel = new Label
             {
                 Text = "You are adding:",
                 AutoSize = true,
-                Location = new Point(20, 16)
+                Location = new Point(margin, y)
             };
-            contentPanel.Controls.Add(addingLabel);
+            Controls.Add(addingLabel);
+            y += 20;
 
             // --- New term (bold) ---
             var newTermLabel = new Label
@@ -71,21 +72,22 @@ namespace Supervertaler.Trados.Controls
                 Text = $"  {_newSource}  \u2192  {_newTarget}",
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 AutoSize = true,
-                Location = new Point(20, 36),
-                MaximumSize = new Size(464, 0)
+                Location = new Point(margin, y),
+                MaximumSize = new Size(contentWidth, 0)
             };
-            contentPanel.Controls.Add(newTermLabel);
+            Controls.Add(newTermLabel);
+            y += Math.Max(newTermLabel.PreferredHeight, 20) + 6;
 
             // --- Separator ---
             var sep1 = new Label
             {
                 BorderStyle = BorderStyle.Fixed3D,
                 Height = 1,
-                Location = new Point(20, 62),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
-                Width = 464
+                Location = new Point(margin, y),
+                Width = contentWidth
             };
-            contentPanel.Controls.Add(sep1);
+            Controls.Add(sep1);
+            y += 10;
 
             // --- Match description ---
             var match = _matches[0];
@@ -121,65 +123,60 @@ namespace Supervertaler.Trados.Controls
             var matchLabel = new Label
             {
                 Text = matchDescription,
-                Location = new Point(20, 72),
-                Size = new Size(464, 60),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+                Location = new Point(margin, y),
+                Size = new Size(contentWidth, 60)
             };
-            contentPanel.Controls.Add(matchLabel);
+            Controls.Add(matchLabel);
+            y += 68;
 
             // --- Action question ---
             var actionLabel = new Label
             {
                 Text = synonymAction,
-                Location = new Point(20, 140),
-                Size = new Size(464, 36),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                Location = new Point(margin, y),
+                Size = new Size(contentWidth, 36),
                 Font = new Font("Segoe UI", 9f, FontStyle.Italic)
             };
-            contentPanel.Controls.Add(actionLabel);
+            Controls.Add(actionLabel);
+            y += 44;
 
-            Controls.Add(contentPanel);
-
-            // --- Bottom button bar ---
-            var bottomPanel = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 52
-            };
-
+            // --- Separator ---
             var sep2 = new Label
             {
                 BorderStyle = BorderStyle.Fixed3D,
                 Height = 1,
-                Dock = DockStyle.Top
+                Location = new Point(0, y),
+                Width = margin + contentWidth + margin
             };
-            bottomPanel.Controls.Add(sep2);
+            Controls.Add(sep2);
+            y += 12;
 
-            // Buttons: right-aligned, right to left: Cancel, Keep Both, Add & Edit..., Add as Synonym
+            // --- Buttons: right-aligned ---
+            int btnH = 30;
+            int btnY = y;
+            int rightEdge = margin + contentWidth;
+
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Size = new Size(80, 30),
+                Size = new Size(80, btnH),
                 DialogResult = DialogResult.Cancel,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
-                Location = new Point(420, 12)
+                Location = new Point(rightEdge - 80, btnY)
             };
 
             var btnKeepBoth = new Button
             {
                 Text = "Keep Both",
-                Size = new Size(90, 30),
+                Size = new Size(90, btnH),
                 DialogResult = DialogResult.No,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
-                Location = new Point(322, 12)
+                Location = new Point(rightEdge - 80 - 8 - 90, btnY)
             };
 
             var btnEditReview = new Button
             {
                 Text = "Add && Edit\u2026",
-                Size = new Size(100, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
-                Location = new Point(214, 12)
+                Size = new Size(115, btnH),
+                Location = new Point(rightEdge - 80 - 8 - 90 - 8 - 115, btnY)
             };
             btnEditReview.Click += (s, e) =>
             {
@@ -190,18 +187,26 @@ namespace Supervertaler.Trados.Controls
             var btnMerge = new Button
             {
                 Text = "Add as Synonym",
-                Size = new Size(120, 30),
+                Size = new Size(140, btnH),
                 DialogResult = DialogResult.Yes,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
-                Location = new Point(86, 12)
+                Location = new Point(rightEdge - 80 - 8 - 90 - 8 - 115 - 8 - 140, btnY)
             };
 
-            bottomPanel.Controls.Add(btnMerge);
-            bottomPanel.Controls.Add(btnEditReview);
-            bottomPanel.Controls.Add(btnKeepBoth);
-            bottomPanel.Controls.Add(btnCancel);
+            var tips = new ToolTip();
+            tips.SetToolTip(btnMerge, "Quickly add the term as a synonym to the existing entry");
+            tips.SetToolTip(btnEditReview, "Add as synonym and open the Term Entry Editor for review");
+            tips.SetToolTip(btnKeepBoth, "Create a separate termbase entry instead of merging");
+            tips.SetToolTip(btnCancel, "Cancel without adding the term");
 
-            Controls.Add(bottomPanel);
+            Controls.Add(btnMerge);
+            Controls.Add(btnEditReview);
+            Controls.Add(btnKeepBoth);
+            Controls.Add(btnCancel);
+
+            y += btnH + 12;
+
+            // Size the form to exactly fit the content.
+            ClientSize = new Size(margin + contentWidth + margin, y);
 
             AcceptButton = btnMerge;
             CancelButton = btnCancel;

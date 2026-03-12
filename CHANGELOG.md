@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.1-beta] — 2026-03-12
+
+### Fixed
+- **Merge dialog buttons clipped** — the "Similar Term Found" dialog's button bar (Add as Synonym, Add & Edit, Keep Both, Cancel) was invisible or partially clipped inside Trados's WPF-hosted plugin environment; replaced the Dock-based panel layout with flat absolute positioning so buttons render reliably at any DPI
+- **Merge dialog button text truncated** — widened the "Add as Synonym" and "Add & Edit..." buttons so their labels are no longer cut off
+
+### Added
+- **Merge dialog button tooltips** — each button now shows a tooltip on hover explaining what it does
+
+---
+
 ## [4.0.0-beta] — 2026-03-12
 
 ### Changed
