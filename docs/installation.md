@@ -38,11 +38,16 @@ Both panels are standard Trados dockable panels. You can drag them to any dockin
 
 To update to a newer version:
 
-1. Close Trados Studio
-2. Double-click the new `.sdlplugin` file
-3. Restart Trados Studio
+1. Download the latest `.sdlplugin` file from [GitHub Releases](https://github.com/Supervertaler/Supervertaler-for-Trados/releases)
+2. **Close Trados Studio completely** — the plugin files are locked while Trados is running
+3. Double-click the new `.sdlplugin` file — Trados's plugin installer handles the rest
+4. Start Trados Studio — it detects the updated package and loads the new version automatically
 
-The new version replaces the previous installation. Your settings and termbases are preserved.
+The new version cleanly replaces the previous installation. Your settings, termbases, and license key are all preserved — no need to uninstall first.
+
+{% hint style="warning" %}
+Trados Studio **must be fully closed** before installing or updating. If Trados is still running, the installer may silently fail because the plugin files are locked.
+{% endhint %}
 
 ## Uninstalling
 
