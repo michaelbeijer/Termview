@@ -27,6 +27,7 @@ These are the topic constants defined in `HelpSystem.Topics` and the documentati
 | `SettingsTermLens` | [/trados/settings/termlens](https://supervertaler.gitbook.io/trados/settings/termlens) | Settings dialog — TermLens tab (index 0) |
 | `SettingsAi` | [/trados/settings/ai-settings](https://supervertaler.gitbook.io/trados/settings/ai-settings) | Settings dialog — AI Settings tab (index 1) |
 | `SettingsPrompts` | [/trados/settings/prompts](https://supervertaler.gitbook.io/trados/settings/prompts) | Settings dialog — Prompts tab (index 2), PromptEditorDialog |
+| `ExampleProject` | [/trados/getting-started/example-project](https://supervertaler.gitbook.io/trados/getting-started/example-project) | MainPanelControl (? menu), AiAssistantControl (? menu) |
 | `Licensing` | [/trados/getting-started/licensing](https://supervertaler.gitbook.io/trados/getting-started/licensing) | Settings dialog — Licence tab (index 3) |
 | `SettingsBackup` | [/trados/settings/backup](https://supervertaler.gitbook.io/trados/settings/backup) | Settings dialog — Backup tab (index 4) |
 | `KeyboardShortcuts` | [/trados/reference/keyboard-shortcuts](https://supervertaler.gitbook.io/trados/reference/keyboard-shortcuts) | — (not yet used in UI) |

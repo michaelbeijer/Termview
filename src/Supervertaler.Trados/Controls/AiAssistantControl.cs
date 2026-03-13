@@ -442,6 +442,8 @@ namespace Supervertaler.Trados.Controls
             var menu = new ContextMenuStrip();
             menu.Items.Add(label, null, (s, ev) =>
                 HelpSystem.OpenHelp(topic));
+            menu.Items.Add("Example Project", null, (s, ev) =>
+                HelpSystem.OpenHelp(HelpSystem.Topics.ExampleProject));
             menu.Items.Add("-");  // separator
             menu.Items.Add("About Supervertaler for Trados", null, (s, ev) =>
             {
