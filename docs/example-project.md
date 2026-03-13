@@ -46,6 +46,10 @@ This is the only manual step. The Supervertaler termbase (`.db` file) is not par
 Don't click "New" — the example termbase already exists and is pre-populated with patent terminology. You just need to tell Supervertaler where to find it.
 {% endhint %}
 
+After attaching the termbase, your TermLens settings should look something like this:
+
+<figure><img src=".gitbook/assets/example-settings.png" alt="TermLens settings showing the example termbases configured with Read, Write, and Project toggles."><figcaption><p>Recommended TermLens settings for the example project.</p></figcaption></figure>
+
 ### 5. Navigate to Segment 7
 
 Open a file in the Editor view and go to **segment 7**. This is a good segment to start with because it has terminology matches in the Supervertaler termbase. You should see:
