@@ -92,7 +92,7 @@ namespace Supervertaler.Trados.Settings
             HelpButtonClicked += OnHelpButtonClicked;
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(560, 480);
-            MinimumSize = new Size(480, 440);
+            MinimumSize = new Size(480, 460);
             MaximumSize = new Size(Screen.PrimaryScreen.WorkingArea.Width, Screen.PrimaryScreen.WorkingArea.Height);
             BackColor = Color.White;
 
@@ -182,7 +182,7 @@ namespace Supervertaler.Trados.Settings
             // Bottom: separator, auto-load, font size (fixed height)
             // Middle: DataGridView fills remaining space
             var topPanel = new Panel { Dock = DockStyle.Top, Height = 138, Width = w, BackColor = Color.White };
-            var bottomPanel = new Panel { Dock = DockStyle.Bottom, Height = 140, BackColor = Color.White };
+            var bottomPanel = new Panel { Dock = DockStyle.Bottom, Height = 170, BackColor = Color.White };
             var gridPanel = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -474,8 +474,8 @@ namespace Supervertaler.Trados.Settings
 
             _chkCaseSensitive = new CheckBox
             {
-                Text = "Case-sensitive matching (default for all termbases)",
-                Location = new Point(10, 28),
+                Text = "Enable case-sensitive matching globally",
+                Location = new Point(10, 32),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(60, 60, 60)
             };
@@ -483,14 +483,14 @@ namespace Supervertaler.Trados.Settings
             var lblFontSize = new Label
             {
                 Text = "Panel font size:",
-                Location = new Point(10, 52),
+                Location = new Point(10, 58),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(60, 60, 60)
             };
 
             _nudFontSize = new NumericUpDown
             {
-                Location = new Point(130, 50),
+                Location = new Point(130, 56),
                 Width = 60,
                 Minimum = 7,
                 Maximum = 16,
@@ -502,7 +502,7 @@ namespace Supervertaler.Trados.Settings
             var lblFontPt = new Label
             {
                 Text = "pt",
-                Location = new Point(194, 52),
+                Location = new Point(194, 58),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(100, 100, 100)
             };
@@ -510,14 +510,14 @@ namespace Supervertaler.Trados.Settings
             var lblShortcutStyle = new Label
             {
                 Text = "Term shortcuts:",
-                Location = new Point(10, 80),
+                Location = new Point(10, 86),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(60, 60, 60)
             };
 
             _cboShortcutStyle = new ComboBox
             {
-                Location = new Point(130, 78),
+                Location = new Point(130, 84),
                 Width = 280,
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
@@ -528,14 +528,14 @@ namespace Supervertaler.Trados.Settings
             var lblChordDelay = new Label
             {
                 Text = "Shortcut delay:",
-                Location = new Point(10, 108),
+                Location = new Point(10, 114),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(60, 60, 60)
             };
 
             _nudChordDelay = new NumericUpDown
             {
-                Location = new Point(130, 106),
+                Location = new Point(130, 112),
                 Width = 70,
                 Minimum = 300,
                 Maximum = 3000,
@@ -546,7 +546,7 @@ namespace Supervertaler.Trados.Settings
             var lblChordMs = new Label
             {
                 Text = "ms",
-                Location = new Point(204, 108),
+                Location = new Point(204, 114),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(100, 100, 100)
             };
@@ -568,6 +568,9 @@ namespace Supervertaler.Trados.Settings
             tips.SetToolTip(_nudChordDelay,
                 "How long the system waits for the next digit in Sequential mode (in milliseconds).\n" +
                 "Increase if you need more time between keystrokes. Only applies to Sequential mode.");
+            tips.SetToolTip(_chkCaseSensitive,
+                "When checked, terms only match if the case matches exactly.\n" +
+                "Individual termbases can override this using the Case column above.");
 
             // Add controls to their respective panels
             topPanel.Controls.AddRange(new Control[]

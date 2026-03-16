@@ -42,6 +42,7 @@ As you navigate between segments in the Trados Studio editor, the TermLens panel
 - **Color-coded by glossary type** — mark glossaries as "Project" in settings to show their terms in pink; all others appear in blue; non-translatable terms appear in yellow; MultiTerm terms appear in green
 - **Non-translatable terms** — mark brand names, product codes, or abbreviations that should stay the same across languages; Ctrl+Alt+N to quick-add, or right-click any term to toggle; the source term is copied verbatim as the target
 - **Abbreviation fields** — add source and target abbreviations to any term entry (e.g., GC for gaschromatografie); when the abbreviation appears in a segment, TermLens highlights it and shows the abbreviated translation; supports pipe-separated variants (`GC|G.C.|gc`) so all common forms are recognised
+- **Case-sensitive matching** — optional global setting plus per-termbase override (Default / Sensitive / Insensitive); useful when abbreviations like "GC" must not match "gc"
 - **Multi-word term support** — correctly matches phrases like "prior art" or "machine translation" as single units
 - **Click to insert** — click any translation to insert it at the cursor position in the target segment
 - **Alt+digit shortcuts** — press Alt+1 through Alt+9 (or Alt+0 for term 10) to instantly insert a matched term; two-digit chords supported for 10+ matches
