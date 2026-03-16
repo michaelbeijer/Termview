@@ -22,7 +22,6 @@ All keyboard shortcuts available in Supervertaler for Trados, with Mac equivalen
 | Shortcut (Windows) | Shortcut (Mac) | Action |
 |---------------------|----------------|--------|
 | `Ctrl+T` | `Control+T` | Translate the active segment (uses Batch Translate settings) |
-| `Ctrl+Alt+A` | `Control+Option+A` | AI translate the active segment (standalone) |
 
 ## Navigation and Display
 

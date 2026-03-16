@@ -52,7 +52,7 @@ Settings are saved and applied immediately.
 ### AI Translate
 
 1. Place the cursor in a segment
-2. Press **Ctrl+Alt+A** to translate the active segment with AI
+2. Press **Ctrl+T** to translate the active segment with AI
 3. The AI translation appears in the target cell
 
 ### Supervertaler Assistant

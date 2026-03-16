@@ -8,16 +8,16 @@ using Supervertaler.Trados.Licensing;
 namespace Supervertaler.Trados
 {
     /// <summary>
-    /// Editor action: Ctrl+Alt+A translates the active segment using the configured AI provider.
-    /// Also appears in the right-click context menu in the editor.
+    /// Legacy action kept for backward compatibility with Trados's cached action registry.
+    /// No default shortcut — Ctrl+T (TranslateActiveSegmentAction) is the primary shortcut.
+    /// Redirects to the same batch-translate pipeline as Ctrl+T.
     /// </summary>
     [Action("Supervertaler_AiTranslateSegment", typeof(EditorController),
         Name = "AI translate current segment",
-        Description = "Translate the active segment using the configured AI provider")]
+        Description = "Translate the active segment (same as Ctrl+T)")]
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 9,
         DisplayType.Default, "", true)]
-    [Shortcut(Keys.Control | Keys.Alt | Keys.A)]
     public class AiTranslateSegmentAction : AbstractAction
     {
         protected override void Execute()
@@ -28,7 +28,8 @@ namespace Supervertaler.Trados
                 return;
             }
 
-            AiAssistantViewPart.HandleAiTranslateSegment();
+            // Redirect to the unified Ctrl+T pipeline
+            AiAssistantViewPart.HandleTranslateActiveSegment();
         }
     }
 }

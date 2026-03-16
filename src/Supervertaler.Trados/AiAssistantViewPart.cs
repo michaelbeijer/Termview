@@ -112,6 +112,7 @@ namespace Supervertaler.Trados
             batchControl.TranslateRequested += OnBatchTranslateRequested;
             batchControl.StopRequested += OnBatchStopRequested;
             batchControl.ScopeChanged += OnBatchScopeChanged;
+            batchControl.OpenAiSettingsRequested += OnSettingsRequested;
 
             // Initial context update
             UpdateContextDisplay();
@@ -846,13 +847,24 @@ namespace Supervertaler.Trados
             });
         }
 
-        // ─── Single-segment AI translate ─────────────────────────────
+        // ─── Legacy entry point (AiTranslateSegmentAction compatibility) ──
 
         /// <summary>
-        /// Called by AiTranslateSegmentAction (Ctrl+Alt+A / right-click menu).
-        /// Translates the active segment using the configured AI provider.
+        /// Legacy redirect — calls HandleTranslateActiveSegment (Ctrl+T pipeline).
+        /// Kept because Trados caches action types and removing the method causes crashes.
         /// </summary>
         public static void HandleAiTranslateSegment()
+        {
+            HandleTranslateActiveSegment();
+        }
+
+        // ─── Original HandleAiTranslateSegment body (replaced) ──────
+        // The old standalone translation logic has been replaced by the
+        // unified batch pipeline below (HandleTranslateActiveSegment).
+        // This dead code block is kept only to preserve line structure
+        // for any pending merges.  It will be cleaned up in a future release.
+
+        private static void _LegacyHandleAiTranslateSegment_Removed()
         {
             var instance = _currentInstance;
             if (instance == null) return;
