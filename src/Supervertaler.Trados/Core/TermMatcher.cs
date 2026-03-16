@@ -328,12 +328,42 @@ namespace Supervertaler.Trados.Core
 
                         if (!overlaps)
                         {
-                            var entries = _termIndex[term];
+                            var rawEntries = _termIndex[term];
                             var matchedText = line.Substring(idx, term.Length);
-                            matches.Add((idx, endIdx, matchedText, entries));
 
-                            for (int p = idx; p < endIdx; p++)
-                                usedPositions.Add(p);
+                            // Post-filter case-sensitive entries for multi-word matches
+                            var filteredEntries = new List<TermEntry>(rawEntries.Count);
+                            foreach (var entry in rawEntries)
+                            {
+                                if (entry.CaseSensitive)
+                                {
+                                    bool caseMatch = string.Equals(
+                                        entry.SourceTerm.Trim(), matchedText.Trim(),
+                                        StringComparison.Ordinal);
+                                    if (!caseMatch)
+                                    {
+                                        foreach (var variant in entry.GetSourceAbbreviationVariants())
+                                        {
+                                            if (string.Equals(variant.Trim(), matchedText.Trim(),
+                                                StringComparison.Ordinal))
+                                            {
+                                                caseMatch = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!caseMatch) continue;
+                                }
+                                filteredEntries.Add(entry);
+                            }
+
+                            if (filteredEntries.Count > 0)
+                            {
+                                matches.Add((idx, endIdx, matchedText, filteredEntries));
+
+                                for (int p = idx; p < endIdx; p++)
+                                    usedPositions.Add(p);
+                            }
                         }
                     }
 
@@ -345,6 +375,7 @@ namespace Supervertaler.Trados.Core
         /// <summary>
         /// Looks up a word in the term index and returns matching entries plus a set
         /// of entry IDs that matched via their SourceAbbreviation (not SourceTerm).
+        /// Entries marked as case-sensitive are filtered out if the case doesn't match.
         /// </summary>
         private (List<TermEntry> entries, HashSet<long> abbrMatchIds) LookupTerm(string word)
         {
@@ -366,10 +397,39 @@ namespace Supervertaler.Trados.Core
             if (entries == null || entries.Count == 0)
                 return emptyResult;
 
+            // Post-filter: for case-sensitive entries, verify that the original text matches
+            var originalText = stripped.Length > 0 ? stripped : normalised;
+            var filtered = new List<TermEntry>(entries.Count);
+            foreach (var entry in entries)
+            {
+                if (entry.CaseSensitive)
+                {
+                    // Check if any indexed key matches the original case
+                    bool caseMatch = string.Equals(entry.SourceTerm.Trim(), originalText, StringComparison.Ordinal);
+                    if (!caseMatch)
+                    {
+                        // Also check abbreviation variants
+                        foreach (var variant in entry.GetSourceAbbreviationVariants())
+                        {
+                            if (string.Equals(variant.Trim(), originalText, StringComparison.Ordinal))
+                            {
+                                caseMatch = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!caseMatch) continue; // skip this entry — case doesn't match
+                }
+                filtered.Add(entry);
+            }
+
+            if (filtered.Count == 0)
+                return emptyResult;
+
             // Determine which entries matched via abbreviation (any pipe-separated variant)
             var abbrIds = new HashSet<long>();
-            var matchKey = (stripped.Length > 0 ? stripped : normalised).ToLowerInvariant();
-            foreach (var entry in entries)
+            var matchKey = originalText.ToLowerInvariant();
+            foreach (var entry in filtered)
             {
                 if (string.Equals(entry.SourceTerm.Trim(), matchKey, StringComparison.OrdinalIgnoreCase))
                     continue; // matched via full term, not abbreviation
@@ -384,7 +444,7 @@ namespace Supervertaler.Trados.Core
                 }
             }
 
-            return (entries, abbrIds);
+            return (filtered, abbrIds);
         }
     }
 }

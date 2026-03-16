@@ -215,5 +215,11 @@ namespace Supervertaler.Trados.Models
         public bool IsProjectTermbase { get; set; }
         public int Ranking { get; set; }
         public int TermCount { get; set; }
+
+        /// <summary>
+        /// Per-termbase case sensitivity setting.
+        /// -1 = use global default, 0 = force case-insensitive, 1 = force case-sensitive.
+        /// </summary>
+        public int CaseSensitive { get; set; } = -1;
     }
 }

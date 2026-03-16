@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Supervertaler.Trados.Core;
 using Supervertaler.Trados.Models;
@@ -18,6 +19,9 @@ namespace Supervertaler.Trados.Controls
     /// </summary>
     public class ChatBubble : Control
     {
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
         private static readonly Color UserBg = ColorTranslator.FromHtml("#D6EBFF");
         private static readonly Color AssistantBg = ColorTranslator.FromHtml("#F0F0F0");
         private static readonly Color TextColor = Color.FromArgb(30, 30, 30);
@@ -131,6 +135,23 @@ namespace Supervertaler.Trados.Controls
                     _rtb.Text = message.Content ?? "";
                 }
             }
+
+            // Forward mouse wheel events from the RichTextBox to the scrollable
+            // chat panel so the user can scroll the conversation with the mouse wheel.
+            _rtb.MouseWheel += (s, e) =>
+            {
+                if (e is HandledMouseEventArgs hme)
+                    hme.Handled = true;
+                // Find the scrollable parent (the Panel with AutoScroll)
+                var scrollParent = Parent?.Parent;
+                if (scrollParent != null)
+                {
+                    const int WM_MOUSEWHEEL = 0x020A;
+                    SendMessage(scrollParent.Handle, WM_MOUSEWHEEL,
+                        (IntPtr)((e.Delta << 16) | (int)Control.ModifierKeys),
+                        IntPtr.Zero);
+                }
+            };
 
             Controls.Add(_rtb);
 

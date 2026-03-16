@@ -9,9 +9,11 @@
 - **Abbreviation in AI prompts** — AI translation prompts now include abbreviation pairs alongside their full terms, so the AI knows both forms
 - **Abbreviation columns in Term Editor** — the Add/Edit Term dialog includes Source Abbreviation and Target Abbreviation text fields between the primary term fields and the synonyms section
 - **Abbreviation columns in Termbase Editor** — the termbase grid shows SrcAbbr and TgtAbbr columns for viewing and editing abbreviations inline
+- **Case-sensitive matching** — new global setting "Case-sensitive matching" (default: off) plus per-termbase override in the settings grid; when enabled, terms only match if the source text has the same letter case as the indexed term; per-termbase setting can be Default (use global), Sensitive, or Insensitive
+- **Mouse wheel scrolling in AI Assistant chat** — the chat message panel now supports mouse wheel scrolling; previously only the scrollbar worked
 
 ### Changed
-- **Database schema migration** — `source_abbreviation` and `target_abbreviation` columns are automatically added to existing databases on first write; fully backward-compatible with older Supervertaler databases
+- **Database schema migration** — `source_abbreviation`, `target_abbreviation` columns on `termbase_terms` and `case_sensitive` column on `termbases` are automatically added to existing databases on first use; fully backward-compatible with older Supervertaler databases
 
 ---
 

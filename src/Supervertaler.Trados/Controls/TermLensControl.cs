@@ -173,7 +173,8 @@ namespace Supervertaler.Trados.Controls
         /// <param name="dbPath">Path to the .db file.</param>
         /// <param name="disabledTermbaseIds">Termbase IDs to exclude (null = load all).</param>
         /// <param name="forceReload">Force reload even if the path hasn't changed.</param>
-        public bool LoadTermbase(string dbPath, HashSet<long> disabledTermbaseIds = null, bool forceReload = false)
+        public bool LoadTermbase(string dbPath, HashSet<long> disabledTermbaseIds = null,
+            bool forceReload = false, bool globalCaseSensitive = false)
         {
             if (!forceReload && dbPath == _currentDbPath && _reader != null)
                 return true;
@@ -188,7 +189,7 @@ namespace Supervertaler.Trados.Controls
             }
 
             // Build in-memory index for fast matching
-            var index = _reader.LoadAllTerms(disabledTermbaseIds);
+            var index = _reader.LoadAllTerms(disabledTermbaseIds, globalCaseSensitive);
             _matcher.LoadIndex(index);
 
             var termbases = _reader.GetTermbases();

@@ -183,6 +183,7 @@ namespace Supervertaler.Trados
             var disabled = _settings.DisabledTermbaseIds != null && _settings.DisabledTermbaseIds.Count > 0
                 ? new HashSet<long>(_settings.DisabledTermbaseIds)
                 : null;
+            var globalCaseSensitive = _settings.CaseSensitiveMatching;
 
             // Push project termbase ID to the control for pink/blue coloring
             _control.Value.SetProjectTermbaseId(_settings.ProjectTermbaseId);
@@ -190,7 +191,7 @@ namespace Supervertaler.Trados
             // 1. Use the saved termbase path if set and the file exists
             if (!string.IsNullOrEmpty(_settings.TermbasePath) && File.Exists(_settings.TermbasePath))
             {
-                _control.Value.LoadTermbase(_settings.TermbasePath, disabled, forceReload);
+                _control.Value.LoadTermbase(_settings.TermbasePath, disabled, forceReload, globalCaseSensitive);
                 return;
             }
 
@@ -207,7 +208,7 @@ namespace Supervertaler.Trados
             {
                 if (File.Exists(path))
                 {
-                    _control.Value.LoadTermbase(path, disabled, forceReload);
+                    _control.Value.LoadTermbase(path, disabled, forceReload, globalCaseSensitive);
                     return;
                 }
             }

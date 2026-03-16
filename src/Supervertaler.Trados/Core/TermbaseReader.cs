@@ -22,6 +22,7 @@ namespace Supervertaler.Trados.Core
         private bool _hasNonTranslatableColumn;
         private bool _hasTermUuidColumn;
         private bool _hasAbbreviationColumns;
+        private bool _hasTermbaseCaseSensitive;
 
         public TermbaseReader(string dbPath)
         {
@@ -58,6 +59,7 @@ namespace Supervertaler.Trados.Core
                 _hasNonTranslatableColumn = HasColumn(_connection, "termbase_terms", "is_nontranslatable");
                 _hasTermUuidColumn = HasColumn(_connection, "termbase_terms", "term_uuid");
                 _hasAbbreviationColumns = HasColumn(_connection, "termbase_terms", "source_abbreviation");
+                _hasTermbaseCaseSensitive = HasColumn(_connection, "termbases", "case_sensitive");
                 return true;
             }
             catch (Exception ex)
@@ -77,10 +79,12 @@ namespace Supervertaler.Trados.Core
             var result = new List<TermbaseInfo>();
             if (_connection == null) return result;
 
-            const string sql = @"
+            var csCol = _hasTermbaseCaseSensitive ? ", tb.case_sensitive" : "";
+            var sql = $@"
                 SELECT tb.id, tb.name, tb.source_lang, tb.target_lang,
                        tb.is_project_termbase, tb.ranking,
                        COUNT(t.id) as term_count
+                       {csCol}
                 FROM termbases tb
                 LEFT JOIN termbase_terms t ON CAST(t.termbase_id AS INTEGER) = tb.id
                 GROUP BY tb.id
@@ -91,7 +95,7 @@ namespace Supervertaler.Trados.Core
             {
                 while (reader.Read())
                 {
-                    result.Add(new TermbaseInfo
+                    var info = new TermbaseInfo
                     {
                         Id = reader.GetInt64(0),
                         Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
@@ -100,7 +104,10 @@ namespace Supervertaler.Trados.Core
                         IsProjectTermbase = !reader.IsDBNull(4) && GetBool(reader, 4),
                         Ranking = reader.IsDBNull(5) ? 99 : reader.GetInt32(5),
                         TermCount = reader.GetInt32(6)
-                    });
+                    };
+                    if (_hasTermbaseCaseSensitive && reader.FieldCount > 7 && !reader.IsDBNull(7))
+                        info.CaseSensitive = reader.GetInt32(7);
+                    result.Add(info);
                 }
             }
 
@@ -170,10 +177,27 @@ namespace Supervertaler.Trados.Core
         /// <param name="disabledTermbaseIds">
         /// Termbase IDs to exclude. Null or empty means load all termbases.
         /// </param>
-        public Dictionary<string, List<TermEntry>> LoadAllTerms(HashSet<long> disabledTermbaseIds = null)
+        public Dictionary<string, List<TermEntry>> LoadAllTerms(HashSet<long> disabledTermbaseIds = null,
+            bool globalCaseSensitive = false)
         {
             var index = new Dictionary<string, List<TermEntry>>(StringComparer.OrdinalIgnoreCase);
             if (_connection == null) return index;
+
+            // Load per-termbase case_sensitive settings
+            var termbaseCaseSettings = new Dictionary<long, int>();
+            if (_hasTermbaseCaseSensitive)
+            {
+                using (var csCmd = new SqliteCommand("SELECT id, case_sensitive FROM termbases", _connection))
+                using (var csReader = csCmd.ExecuteReader())
+                {
+                    while (csReader.Read())
+                    {
+                        var tbId = csReader.GetInt64(0);
+                        var cs = csReader.IsDBNull(1) ? -1 : csReader.GetInt32(1);
+                        termbaseCaseSettings[tbId] = cs;
+                    }
+                }
+            }
 
             var ntCol = _hasNonTranslatableColumn ? ", t.is_nontranslatable" : "";
             var uuidCol = _hasTermUuidColumn ? ", t.term_uuid" : "";
@@ -236,6 +260,12 @@ namespace Supervertaler.Trados.Core
             {
                 if (synonymsByTermId.TryGetValue(entry.Id, out var syns))
                     entry.TargetSynonyms = syns;
+
+                // Resolve case sensitivity: per-termbase override > global default
+                if (termbaseCaseSettings.TryGetValue(entry.TermbaseId, out var tbCs) && tbCs >= 0)
+                    entry.CaseSensitive = tbCs == 1;
+                else
+                    entry.CaseSensitive = globalCaseSensitive;
 
                 var key = entry.SourceTerm.Trim().ToLowerInvariant();
 
@@ -471,6 +501,16 @@ namespace Supervertaler.Trados.Core
                 }
                 using (var cmd = new SqliteCommand(
                     "ALTER TABLE termbase_terms ADD COLUMN target_abbreviation TEXT DEFAULT ''", conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            // Ensure termbases table has case_sensitive column
+            if (!HasColumn(conn, "termbases", "case_sensitive"))
+            {
+                using (var cmd = new SqliteCommand(
+                    "ALTER TABLE termbases ADD COLUMN case_sensitive INTEGER DEFAULT -1", conn))
                 {
                     cmd.ExecuteNonQuery();
                 }
@@ -982,6 +1022,33 @@ namespace Supervertaler.Trados.Core
                         cmd.Parameters.AddWithValue("@source", sourceTerm);
 
                     return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the case_sensitive setting on the termbases table.
+        /// -1 = use global default, 0 = force case-insensitive, 1 = force case-sensitive.
+        /// </summary>
+        public static void SetTermbaseCaseSensitive(string dbPath, long termbaseId, int caseSensitive)
+        {
+            var connStr = new SqliteConnectionStringBuilder
+            {
+                DataSource = dbPath,
+                Mode = SqliteOpenMode.ReadWrite
+            }.ToString();
+
+            using (var conn = new SqliteConnection(connStr))
+            {
+                conn.Open();
+                MigrateSchema(conn);
+
+                using (var cmd = new SqliteCommand(
+                    "UPDATE termbases SET case_sensitive = @cs WHERE id = @id", conn))
+                {
+                    cmd.Parameters.AddWithValue("@cs", caseSensitive);
+                    cmd.Parameters.AddWithValue("@id", termbaseId);
+                    cmd.ExecuteNonQuery();
                 }
             }
         }

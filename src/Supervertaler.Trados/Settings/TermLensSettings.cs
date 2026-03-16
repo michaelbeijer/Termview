@@ -124,6 +124,16 @@ namespace Supervertaler.Trados.Settings
         [DataMember(Name = "chordDelayMs")]
         public int ChordDelayMs { get; set; } = 1100;
 
+        // ─── Case sensitivity ────────────────────────────────────────
+        /// <summary>
+        /// Global default for case-sensitive term matching.
+        /// When true, terms only match if the source text has the same case as the indexed term.
+        /// Individual termbases can override this via their own case_sensitive setting.
+        /// Default: false (case-insensitive, matching current behaviour).
+        /// </summary>
+        [DataMember(Name = "caseSensitiveMatching")]
+        public bool CaseSensitiveMatching { get; set; } = false;
+
         // ─── Update checker ──────────────────────────────────────────
         /// <summary>
         /// Version string the user chose to skip (e.g. "4.2.0-beta").
