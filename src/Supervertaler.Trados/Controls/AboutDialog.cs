@@ -201,7 +201,7 @@ namespace Supervertaler.Trados.Controls
                 ("Alt+Up",        "Quick-add term to project termbase"),
                 ("Ctrl+Alt+T",    "Add term (dialog)"),
                 ("Ctrl+Alt+N",    "Quick-add non-translatable"),
-                ("Ctrl+T",        "Translate active segment"),
+                ("Ctrl+Alt+A",    "AI translate segment"),
                 ("Ctrl+Alt+G",    "Term Picker"),
                 ("Alt+1\u20269",  "Insert term from TermLens panel"),
                 ("F1",            "Context-sensitive help"),

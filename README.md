@@ -94,7 +94,7 @@ Supervertaler for Trados includes built-in AI translation powered by OpenAI, Ant
 ### Features
 
 - **Batch translate** — translate multiple segments at once from the Batch Translate tab; choose from four scopes: empty segments only, all segments, filtered segments, or filtered empty only
-- **Single-segment translate** — press **Ctrl+T** to translate the active segment using the same settings as Batch Translate (provider, model, prompt); also available via right-click → "Translate active segment"
+- **Single-segment translate** — press **Ctrl+T** to translate the active segment using the same settings as Batch Translate (provider, model, prompt); also available via right-click → "Translate active segment" or **Ctrl+Alt+A** for standalone translation
 - **Filtered segment support** — use Trados's advanced display filter to narrow down which segments to translate, then batch-translate only those
 - **Multiple AI providers** — OpenAI (GPT-4o, GPT-4o mini, o1, o3-mini), Anthropic (Claude Sonnet, Haiku, Opus), and Google (Gemini 2.0 Flash, Gemini 1.5 Pro)
 - **Glossary-aware prompts** — AI translations automatically include your approved terms (including non-translatable terms) in the prompt

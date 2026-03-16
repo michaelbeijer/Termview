@@ -45,9 +45,6 @@ namespace Supervertaler.Trados.Controls
         /// <summary>Fired when user clicks "Stop".</summary>
         public event EventHandler StopRequested;
 
-        /// <summary>Fired when user clicks the "AI Settings…" link.</summary>
-        public event EventHandler OpenAiSettingsRequested;
-
         /// <summary>Fired when user changes the scope dropdown.</summary>
         public event EventHandler ScopeChanged;
 
@@ -148,25 +145,6 @@ namespace Supervertaler.Trados.Controls
             };
             Controls.Add(lblProviderLabel);
             Controls.Add(_lblProvider);
-            y += 22;
-
-            // ─── AI Settings link ─────────────────────────────────
-            var lnkAiSettings = new LinkLabel
-            {
-                Text = "AI Settings\u2026",
-                Location = new Point(100, y),
-                AutoSize = true,
-                Font = bodyFont,
-                LinkColor = Color.FromArgb(0, 102, 204)
-            };
-            var tip = new ToolTip();
-            tip.SetToolTip(lnkAiSettings,
-                "Configure the AI provider, model, API key,\r\n" +
-                "and AI context options (TM matches, termbases,\r\n" +
-                "document context, term metadata).");
-            lnkAiSettings.LinkClicked += (s, ev) =>
-                OpenAiSettingsRequested?.Invoke(this, EventArgs.Empty);
-            Controls.Add(lnkAiSettings);
             y += 22;
 
             // ─── Segment count ──────────────────────────────────

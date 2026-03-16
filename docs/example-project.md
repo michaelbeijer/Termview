@@ -64,7 +64,7 @@ Browse through the other segments to see how TermLens highlights terminology acr
 
 If you have an API key configured (see [Getting Started](getting-started.md#3.-configure-ai-ai-settings-tab)):
 
-- Press **Ctrl+T** to AI-translate the current segment
+- Press **Ctrl+Alt+A** to AI-translate the current segment
 - Open the **Supervertaler Assistant** panel to ask questions about terminology or the current segment
 
 {% hint style="info" %}

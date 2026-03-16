@@ -36,7 +36,7 @@ Domain-specific prompts (e.g., Medical Translation Specialist, Legal Translation
 
 ## Provider and Model
 
-The current AI provider and model are displayed below the prompt selector. Click the **AI Settings…** link underneath to jump straight to the AI Settings tab, where you can change the provider, model, API key, and AI context options (TM matches, termbases, document context, term metadata).
+The current AI provider and model are displayed below the prompt selector. To change them, open the settings dialog (gear icon in the TermLens header) and go to the **AI Settings** tab.
 
 ## Progress and Logging
 
@@ -48,16 +48,29 @@ During translation:
 
 ## Translate Active Segment (Ctrl+T)
 
-Press **Ctrl+T** to translate the active segment instantly. This uses the same provider, model, and prompt as Batch Translate, so you can switch prompts or providers and immediately use them for single segments with Ctrl+T.
+Press **Ctrl+T** to translate the active segment instantly. This uses the same provider, model, and prompt currently selected in the Batch Translate tab, so you can switch prompts or providers in the Batch Translate tab and immediately use them for single segments with Ctrl+T.
 
 Ctrl+T is also available via right-click in the editor ("Translate active segment").
 
 ### How it works
 
-1. The active segment's source text is sent to the AI provider configured in AI Settings
-2. The selected prompt (from the Batch Translate tab) is applied, along with termbase terms
+1. The active segment's source text is sent to the AI provider configured in the Batch Translate tab
+2. The selected prompt (if any) is applied, along with termbase terms
 3. The translation is written directly into the target cell
 4. Inline tags (bold, italic, field codes, etc.) are preserved in the translation
+
+### Difference from Ctrl+Alt+A
+
+Supervertaler for Trados has two single-segment translation shortcuts:
+
+| Shortcut | Settings source | Best for |
+|----------|----------------|----------|
+| **Ctrl+T** | Batch Translate tab (provider, prompt, model) | Day-to-day translation — uses whatever you have set up in Batch Translate |
+| **Ctrl+Alt+A** | AI Settings (standalone) | Quick one-off translations without changing your batch settings |
+
+{% hint style="info" %}
+**Ctrl+T** is the recommended shortcut for most workflows. It ensures your single-segment and batch translations use the same prompt and provider, so the style is consistent.
+{% endhint %}
 
 ## Tips
 

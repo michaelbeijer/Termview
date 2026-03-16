@@ -112,7 +112,6 @@ namespace Supervertaler.Trados
             batchControl.TranslateRequested += OnBatchTranslateRequested;
             batchControl.StopRequested += OnBatchStopRequested;
             batchControl.ScopeChanged += OnBatchScopeChanged;
-            batchControl.OpenAiSettingsRequested += OnSettingsRequested;
 
             // Initial context update
             UpdateContextDisplay();
@@ -849,13 +848,220 @@ namespace Supervertaler.Trados
 
         // ─── Single-segment AI translate ─────────────────────────────
 
+        /// <summary>
+        /// Called by AiTranslateSegmentAction (Ctrl+Alt+A / right-click menu).
+        /// Translates the active segment using the configured AI provider.
+        /// </summary>
+        public static void HandleAiTranslateSegment()
+        {
+            var instance = _currentInstance;
+            if (instance == null) return;
+
+            instance.SafeInvoke(() =>
+            {
+                try
+                {
+                    if (instance._activeDocument?.ActiveSegmentPair == null)
+                    {
+                        MessageBox.Show("No active segment.",
+                            "Supervertaler", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+
+                    var settings = instance._settings;
+                    var aiSettings = settings?.AiSettings;
+                    if (aiSettings == null)
+                    {
+                        MessageBox.Show(
+                            "AI settings not configured.\n\nOpen Settings \u2192 AI Settings to configure a provider.",
+                            "Supervertaler \u2014 AI Translate",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // Resolve API key
+                    var provider = aiSettings.SelectedProvider ?? LlmModels.ProviderOpenAi;
+                    string apiKey;
+                    string baseUrl = null;
+                    string model = aiSettings.GetSelectedModel();
+
+                    if (provider == LlmModels.ProviderOllama)
+                    {
+                        apiKey = "ollama";
+                        baseUrl = aiSettings.OllamaEndpoint ?? "http://localhost:11434";
+                    }
+                    else if (provider == LlmModels.ProviderCustomOpenAi)
+                    {
+                        var profile = aiSettings.GetActiveCustomProfile();
+                        if (profile == null)
+                        {
+                            MessageBox.Show("No custom OpenAI profile configured.",
+                                "Supervertaler \u2014 AI Translate",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+                        apiKey = profile.ApiKey;
+                        baseUrl = profile.Endpoint;
+                        model = profile.Model;
+                    }
+                    else
+                    {
+                        apiKey = LlmClient.ResolveApiKey(provider, aiSettings.ApiKeys);
+                    }
+
+                    if (string.IsNullOrEmpty(apiKey))
+                    {
+                        MessageBox.Show(
+                            $"No API key configured for {provider}.\n\nOpen Settings \u2192 AI Settings to add one.",
+                            "Supervertaler \u2014 AI Translate",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    var sourceLang = instance.GetDocumentSourceLanguage();
+                    var targetLang = instance.GetDocumentTargetLanguage();
+                    if (string.IsNullOrEmpty(sourceLang) || string.IsNullOrEmpty(targetLang))
+                    {
+                        MessageBox.Show("Cannot determine source/target language.",
+                            "Supervertaler \u2014 AI Translate",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // Serialize source with tag placeholders if segment has inline tags
+                    var sourceSegment = instance._activeDocument.ActiveSegmentPair.Source;
+                    var serialization = SegmentTagHandler.Serialize(sourceSegment);
+                    var hasTags = serialization.HasTags;
+                    var tagMap = hasTags ? serialization.TagMap : null;
+                    var sourceText = hasTags
+                        ? serialization.SerializedText
+                        : (sourceSegment?.ToString() ?? "");
+
+                    if (string.IsNullOrWhiteSpace(SegmentTagHandler.StripTagPlaceholders(sourceText)))
+                    {
+                        MessageBox.Show("Active segment has no source text.",
+                            "Supervertaler \u2014 AI Translate",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+
+                    // Get termbase terms for prompt injection (filtered by AI-disabled list)
+                    var allTbTerms = TermLensEditorViewPart.GetCurrentTermbaseTerms();
+                    var singleDisabledIds = settings?.AiSettings?.DisabledAiTermbaseIds ?? new List<long>();
+                    var termbaseTerms = singleDisabledIds.Count > 0
+                        ? allTbTerms.Where(t => !singleDisabledIds.Contains(t.TermbaseId)).ToList()
+                        : allTbTerms;
+
+                    // Resolve custom prompt from settings
+                    var customPromptContent = instance.ResolveCustomPromptContent(sourceLang, targetLang);
+                    var customSystemPrompt = aiSettings.CustomSystemPrompt;
+
+                    // Log to batch translate panel for visibility
+                    var batchControl = _control.Value.BatchTranslateControl;
+                    batchControl.AppendLog($"Translating segment: \"{Truncate(sourceText, 60)}\"...");
+
+                    // Run async — single segment, reuse TranslationPrompt + LlmClient
+                    var capturedAiSettings = aiSettings;
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var systemPrompt = TranslationPrompt.BuildSystemPrompt(
+                                sourceLang, targetLang,
+                                customPromptContent, termbaseTerms, customSystemPrompt);
+
+                            var client = new LlmClient(
+                                capturedAiSettings.SelectedProvider,
+                                capturedAiSettings.GetSelectedModel(),
+                                apiKey, baseUrl);
+
+                            // For single segment, send it directly (not numbered batch format)
+                            var userPrompt = $"Translate the following segment:\n\n{sourceText}";
+
+                            var response = await client.SendPromptAsync(userPrompt, systemPrompt);
+
+                            if (!string.IsNullOrWhiteSpace(response))
+                            {
+                                // Clean up the response (remove potential numbering or quotes)
+                                var translation = response.Trim();
+                                if (translation.StartsWith("1. "))
+                                    translation = translation.Substring(3).Trim();
+                                if (translation.Length >= 2 &&
+                                    ((translation.StartsWith("\"") && translation.EndsWith("\"")) ||
+                                     (translation.StartsWith("\u201c") && translation.EndsWith("\u201d"))))
+                                    translation = translation.Substring(1, translation.Length - 2);
+
+                                // Capture tag state for use in UI thread
+                                var capturedHasTags = hasTags;
+                                var capturedTagMap = tagMap;
+
+                                instance.SafeInvoke(() =>
+                                {
+                                    try
+                                    {
+                                        // If source had tags, try to reconstruct with proper tags
+                                        if (capturedHasTags && capturedTagMap != null &&
+                                            capturedTagMap.Count > 0)
+                                        {
+                                            var pair = instance._activeDocument.ActiveSegmentPair;
+                                            if (pair != null)
+                                            {
+                                                bool reconstructed = SegmentTagHandler.ReconstructTarget(
+                                                    pair.Target, pair.Source,
+                                                    translation, capturedTagMap);
+
+                                                if (reconstructed)
+                                                {
+                                                    batchControl.AppendLog(
+                                                        $"Done (with tags): \"{Truncate(SegmentTagHandler.StripTagPlaceholders(translation), 60)}\"");
+                                                    return;
+                                                }
+                                            }
+
+                                            // Reconstruction failed — strip placeholders, use plain text
+                                            translation = SegmentTagHandler.StripTagPlaceholders(translation);
+                                        }
+
+                                        instance._activeDocument.Selection.Target.Replace(
+                                            translation, "Supervertaler");
+                                        batchControl.AppendLog(
+                                            $"Done: \"{Truncate(translation, 60)}\"");
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        batchControl.AppendLog(
+                                            $"Failed to write translation: {ex.Message}", true);
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                instance.SafeInvoke(() =>
+                                    batchControl.AppendLog("Empty response from AI provider.", true));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            instance.SafeInvoke(() =>
+                                batchControl.AppendLog(
+                                    $"AI translate failed: {ex.Message}", true));
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Unexpected error: {ex.Message}",
+                        "Supervertaler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            });
+        }
+
         // ─── Ctrl+T: Translate Active Segment via Batch Pipeline ──
 
         /// <summary>
         /// Translates the active segment using the batch translate pipeline
-        /// (same provider, prompt, and termbase settings as configured in
-        /// AI Settings and the Batch Translate tab).
-        /// Called by TranslateActiveSegmentAction (Ctrl+T) and right-click menu.
+        /// (same provider, prompt, and termbase settings as the Batch Translate tab).
+        /// Called by TranslateActiveSegmentAction (Ctrl+T).
         /// </summary>
         public static void HandleTranslateActiveSegment()
         {

@@ -4,10 +4,6 @@
 
 ### Added
 - **Ctrl+T quick translate** — press **Ctrl+T** to instantly translate the active segment using the same provider, model, and prompt configured in the Batch Translate tab; the translation is applied directly to the target cell, with full tag preservation for segments containing inline formatting; also available via right-click context menu ("Translate active segment"); rebindable in Trados Studio's keyboard shortcut settings
-- **AI Settings link in Batch Translate tab** — clickable "AI Settings…" link below the provider display opens the Settings dialog directly on the AI Settings tab; tooltip explains what can be configured there (provider, model, API key, TM matches, termbases, document context, term metadata)
-
-### Removed
-- **Ctrl+Alt+A standalone translate** — removed the separate single-segment translation shortcut; Ctrl+T now covers all single-segment translation with full tag support, using the same pipeline as Batch Translate
 
 ### Fixed
 - **Tagged segments not applied in batch translate** — segments containing inline Trados tags (bold, italic, field codes, page numbers, etc.) were translated by the AI but the translation was never written back to the target; the reconstructed target was written to the document model but the Trados editor's own buffer overwrote it with the old (empty) content; now uses the Trados `ProcessSegmentPair` API which handles the edit transaction correctly
