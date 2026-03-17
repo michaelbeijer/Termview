@@ -85,8 +85,15 @@ namespace Supervertaler.Trados.Core
             // {{UPPERCASE}} format (Python Supervertaler / Workbench standard)
             content = content.Replace("{{SOURCE_LANGUAGE}}", sourceLang ?? "");
             content = content.Replace("{{TARGET_LANGUAGE}}", targetLang ?? "");
+
+            // Canonical segment variable names
+            content = content.Replace("{{SOURCE_SEGMENT}}", sourceText ?? "");
+            content = content.Replace("{{TARGET_SEGMENT}}", targetText ?? "");
+
+            // Legacy aliases — kept for backward compatibility
             content = content.Replace("{{SOURCE_TEXT}}", sourceText ?? "");
             content = content.Replace("{{TARGET_TEXT}}", targetText ?? "");
+
             content = content.Replace("{{SELECTION}}", selection ?? "");
 
             // {lowercase} format (legacy compatibility with Python domain prompts)

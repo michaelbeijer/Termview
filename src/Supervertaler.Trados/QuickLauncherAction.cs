@@ -23,6 +23,7 @@ namespace Supervertaler.Trados
     [ActionLayout(
         typeof(TranslationStudioDefaultContextMenus.EditorDocumentContextMenuLocation), 9,
         DisplayType.Default, "", true)]
+    [Shortcut(Keys.Control | Keys.Q)]
     public class QuickLauncherAction : AbstractAction
     {
         private static readonly PromptLibrary _library = new PromptLibrary();
@@ -35,6 +36,9 @@ namespace Supervertaler.Trados
                 return;
             }
 
+            // Always refresh so newly created or edited prompts appear immediately
+            // without requiring a Trados restart.
+            _library.Refresh();
             var prompts = _library.GetQuickLauncherPrompts();
 
             if (prompts.Count == 0)

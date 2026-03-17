@@ -14,6 +14,10 @@ All keyboard shortcuts available in Supervertaler for Trados, with Mac equivalen
 **Trados conflict with Ctrl+Alt+T:** Trados Studio assigns this shortcut to "Insert TM Symbol" by default. If Ctrl+Alt+T does nothing, go to **File → Options → Keyboard Shortcuts**, search for "Insert TM Symbol", and remove or reassign its shortcut to free up Ctrl+Alt+T for Supervertaler.
 {% endhint %}
 
+{% hint style="warning" %}
+**Trados conflict with Ctrl+Q:** Trados Studio assigns Ctrl+Q to "View Internally Source" by default. This action is rarely used. To free up Ctrl+Q for the QuickLauncher, go to **File → Options → Keyboard Shortcuts**, search for "View Internally Source", and remove or reassign its shortcut.
+{% endhint %}
+
 ## Terminology
 
 | Shortcut (Windows) | Shortcut (Mac) | Action |
@@ -29,6 +33,7 @@ All keyboard shortcuts available in Supervertaler for Trados, with Mac equivalen
 
 | Shortcut (Windows) | Shortcut (Mac) | Action |
 |---------------------|----------------|--------|
+| `Ctrl+Q` | `Control+Q` | Open QuickLauncher prompt menu |
 | `Ctrl+T` | `Control+T` | Translate the active segment (uses Batch Translate settings) |
 
 ## Navigation and Display

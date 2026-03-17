@@ -406,7 +406,7 @@ namespace Supervertaler.Trados.Settings
             {
                 Name = "colCase",
                 HeaderText = "Case",
-                Width = 90,
+                Width = 112,
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
                 FillWeight = 1,
                 FlatStyle = FlatStyle.Flat,
