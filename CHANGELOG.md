@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.10.2] — 2026-03-17
+
+### Changed
+- **`quicklauncher_label` YAML field** — the optional short label for the QuickLauncher menu is now set with `quicklauncher_label:` in `.svprompt` frontmatter; the old name `quickmenu_label` still works as a backward-compatible alias
+
+---
+
 ## [4.10.1] — 2026-03-17
 
 ### Added
