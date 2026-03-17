@@ -449,12 +449,20 @@ namespace Supervertaler.Trados.Controls
             switch (_tabControl.SelectedIndex)
             {
                 case 1:
-                    topic = HelpSystem.Topics.BatchTranslate;
-                    label = "Batch Translate Help";
+                    if (_batchTranslateControl.CurrentMode == BatchMode.Proofread)
+                    {
+                        topic = HelpSystem.Topics.AiProofreader;
+                        label = "AI Proofreader Help";
+                    }
+                    else
+                    {
+                        topic = HelpSystem.Topics.BatchTranslate;
+                        label = "Batch Translate Help";
+                    }
                     break;
                 case 2:
-                    topic = HelpSystem.Topics.AiProofreader;
-                    label = "Proofreading && Reports Help";
+                    topic = HelpSystem.Topics.AiProofreaderReports;
+                    label = "Reports Help";
                     break;
                 default:
                     topic = HelpSystem.Topics.AiAssistantChat;
@@ -483,8 +491,10 @@ namespace Supervertaler.Trados.Controls
                 string topic;
                 switch (_tabControl.SelectedIndex)
                 {
-                    case 1: topic = HelpSystem.Topics.BatchTranslate; break;
-                    case 2: topic = HelpSystem.Topics.AiProofreader; break;
+                    case 1: topic = _batchTranslateControl.CurrentMode == BatchMode.Proofread
+                                ? HelpSystem.Topics.AiProofreader
+                                : HelpSystem.Topics.BatchTranslate; break;
+                    case 2: topic = HelpSystem.Topics.AiProofreaderReports; break;
                     default: topic = HelpSystem.Topics.AiAssistantChat; break;
                 }
                 HelpSystem.OpenHelp(topic);
