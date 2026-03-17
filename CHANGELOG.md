@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.9.0] — 2026-03-17
+
+### Added
+- **Unified user data folder** — Supervertaler for Trados now stores all data (settings, licence, projects, prompts) in a single shared folder alongside Supervertaler Workbench (default: `~/Supervertaler/`); the folder is configured via a shared `%APPDATA%\Supervertaler\config.json` pointer so both products automatically read from the same location
+- **First-run setup dialog** — on first launch, a dialog lets you choose the data folder; if an existing Workbench installation is detected its path is pre-filled so you can share data immediately with one click
+- **Automatic data migration** — existing settings, licence, project overlays, and custom prompts are copied from the old `%LocalAppData%\Supervertaler.Trados\` location to the new shared folder on first run; old files are left in place as a backup
+- **Shared prompt library** — prompts are now read from and written to the shared `prompt_library/` folder; any prompt created in Workbench is immediately visible in the Trados plugin and vice versa, with no configuration required
+
+---
+
 ## [4.8.1] — 2026-03-17
 
 ### Changed
