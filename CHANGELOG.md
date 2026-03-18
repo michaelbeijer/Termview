@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.10.5] — 2026-03-18
+
+### Added
+- **QuickLauncher built-in prompts** — three prompts now ship as built-ins and are created on first run (or via Restore): *Assess how I translated the current segment*, *Define*, and *Explain (in general)*
+
+### Changed
+- **Style guide prompts removed** — the five language-specific style guides (Dutch, English, French, German, Spanish) are no longer shipped as built-in prompts; users who want style guide prompts can create their own in the Prompts tab
+- **Built-in prompts use `{{SOURCE_LANGUAGE}}`/`{{TARGET_LANGUAGE}}`** — all specialist prompt content updated from legacy `{source_lang}`/`{target_lang}` single-brace format to the current double-brace standard
+
+### Fixed
+- **Delete button label clipped in Prompts tab** — the Delete button was too narrow (55 px), causing the label to be cut off; widened to 65 px
+
+---
+
 ## [4.10.4] — 2026-03-18
 
 ### Fixed
