@@ -117,11 +117,66 @@ Assess how I translated the current segment. Point out any inaccuracies,
 awkward phrasing, or terminology issues, and suggest improvements.
 ```
 
+### Example: translate a selected term using surrounding context
+
+Uses `{{SELECTION}}` together with `{{SURROUNDING_SEGMENTS}}` so the AI sees the passage
+around the active segment, not just the active segment itself:
+
+```
+I am translating a {{SOURCE_LANGUAGE}} patent into {{TARGET_LANGUAGE}}.
+
+The selected term is: {{SELECTION}}
+
+Here is the passage surrounding the active segment for context:
+
+{{SURROUNDING_SEGMENTS}}
+
+Suggest the best {{TARGET_LANGUAGE}} translation for "{{SELECTION}}" given the
+surrounding context. Give a brief explanation of your reasoning.
+```
+
+### Example: full-document term query
+
+Uses `{{PROJECT}}` to give the AI the complete source text. Reserve this for high-stakes
+queries where full document context matters, such as a key term that appears in multiple
+places with different nuances:
+
+```
+I am translating a {{SOURCE_LANGUAGE}} patent ({{DOCUMENT_NAME}}) into {{TARGET_LANGUAGE}}.
+Project: {{PROJECT_NAME}}
+
+Here is the complete source text, segment by segment:
+
+{{PROJECT}}
+
+Throughout this document, what is the most accurate and consistent {{TARGET_LANGUAGE}}
+translation for "{{SELECTION}}"? Consider all occurrences in context and note any
+variation in meaning between them.
+```
+
+### Example: check specific segments by number
+
+After using `{{PROJECT}}` the AI knows the segment numbers, so you can follow up in the
+chat — or build a prompt that asks about specific segments from the start:
+
+```
+I am translating a {{SOURCE_LANGUAGE}} patent into {{TARGET_LANGUAGE}}.
+
+Here is the source document:
+
+{{PROJECT}}
+
+My translations so far:
+- Segment 1: [paste your translation here]
+- Segment 4: [paste your translation here]
+
+Do you think these translations are accurate and consistent with the terminology
+used elsewhere in the document?
+```
+
 The plugin fills in all variables and sends the expanded prompt straight to the AI.
 
 ## Setting up QuickLauncher prompts
-
-Any `.svprompt` file can be made into a QuickLauncher prompt by adding `sv_quicklauncher: true` to its YAML frontmatter, or by placing it in a folder called `QuickLauncher` inside your `prompt_library` folder.
 
 Set `category: QuickLauncher` in the YAML frontmatter, or place the file in a folder called `QuickLauncher` inside your `prompt_library`. See [Prompts → Marking a prompt as a QuickLauncher shortcut](settings/prompts.md#marking-a-prompt-as-a-quicklauncher-shortcut) for full details.
 

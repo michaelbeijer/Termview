@@ -79,7 +79,7 @@ As you navigate between segments in the Trados Studio editor, the TermLens panel
 
 QuickLauncher puts your most-used AI prompts in the editor right-click menu. Select a word or phrase, press **Ctrl+Q** (or right-click → QuickLauncher), choose a prompt, and the AI Assistant receives the expanded prompt with the current segment context already filled in.
 
-Prompts support five variables: `{{SOURCE_LANGUAGE}}`, `{{TARGET_LANGUAGE}}`, `{{SOURCE_SEGMENT}}` (full source segment), `{{TARGET_SEGMENT}}` (your translation so far), and `{{SELECTION}}` (selected text). Any `.svprompt` file marked with `sv_quicklauncher: true` or placed in a `QuickLauncher` folder appears in the menu automatically — and is shared with Supervertaler Workbench via the shared prompt library.
+Prompts support nine variables: `{{SOURCE_LANGUAGE}}`, `{{TARGET_LANGUAGE}}`, `{{SOURCE_SEGMENT}}`, `{{TARGET_SEGMENT}}`, `{{SELECTION}}`, `{{PROJECT_NAME}}`, `{{DOCUMENT_NAME}}`, `{{SURROUNDING_SEGMENTS}}` (configurable context window with actual Trados segment numbers), and `{{PROJECT}}` (all source segments numbered — useful for full-document queries on important projects). Any `.svprompt` file with `category: QuickLauncher` in its frontmatter, or placed in a `QuickLauncher` folder, appears in the menu automatically and is shared with Supervertaler Workbench via the shared prompt library.
 
 ---
 

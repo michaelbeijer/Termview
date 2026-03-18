@@ -146,11 +146,74 @@ Suggest the best {{TARGET_LANGUAGE}} translation for "{{SELECTION}}"
 given the full segment context above. Give a short explanation of your reasoning.
 ```
 
+### Example QuickLauncher prompt — translate a term using surrounding passage
+
+Uses `{{SURROUNDING_SEGMENTS}}` for a wider context window than just the active segment:
+
+```
+I am translating a {{SOURCE_LANGUAGE}} patent into {{TARGET_LANGUAGE}}.
+
+The selected term is: {{SELECTION}}
+
+Here is the passage surrounding the active segment:
+
+{{SURROUNDING_SEGMENTS}}
+
+Suggest the best {{TARGET_LANGUAGE}} translation for "{{SELECTION}}" given the
+surrounding context. Briefly explain your reasoning.
+```
+
+### Example QuickLauncher prompt — full-document term consistency check
+
+Uses `{{PROJECT}}` to give the AI the entire source document. Useful for checking
+whether a key term is used consistently, or for understanding a term's meaning across
+all its occurrences. Reserve this for important queries — see the token cost note above.
+
+```
+I am translating a {{SOURCE_LANGUAGE}} patent ({{DOCUMENT_NAME}}) into {{TARGET_LANGUAGE}}.
+Project: {{PROJECT_NAME}}
+
+Here is the complete source text:
+
+{{PROJECT}}
+
+The selected term is: {{SELECTION}}
+
+What is the most accurate and consistent {{TARGET_LANGUAGE}} translation for
+"{{SELECTION}}" throughout this document? Note any variation in meaning between
+occurrences and recommend which translation to use where.
+```
+
+### Example QuickLauncher prompt — check a segment against the full document
+
+After sending `{{PROJECT}}`, the AI knows the segment numbers shown in Trados, so you
+can ask about specific segments by number in follow-up messages — or ask in the prompt
+itself:
+
+```
+I am translating a {{SOURCE_LANGUAGE}} patent into {{TARGET_LANGUAGE}}.
+
+Here is the source document:
+
+{{PROJECT}}
+
+I am currently working on segment {{SOURCE_SEGMENT}} (shown as [{{SOURCE_SEGMENT}}]
+above). My translation is:
+
+{{TARGET_SEGMENT}}
+
+Does this translation accurately reflect the source and maintain consistency with the
+terminology used elsewhere in the document? Point out any issues.
+```
+
 ### Tips for effective prompts
 
 - **Be explicit about output format.** If you only want the translation, say "Return only the translated text." If you want an explanation, describe the expected structure.
 - **Use language variables.** Hardcoding "Dutch to English" breaks the prompt when you switch projects. Always use `{{SOURCE_LANGUAGE}}` and `{{TARGET_LANGUAGE}}`.
-- **Keep QuickLauncher prompts focused.** They run on a single selection or segment — a narrow, specific task works better than a broad one.
+- **Keep QuickLauncher prompts focused.** A narrow, specific task works better than a broad one — except when you deliberately need the full document context via `{{PROJECT}}`.
+- **Use `{{SURROUNDING_SEGMENTS}}` instead of `{{SOURCE_SEGMENT}}` when context matters.** The surrounding passage often gives the AI enough context for a better answer at a fraction of the cost of `{{PROJECT}}`.
+- **Use `{{PROJECT}}` sparingly.** It is best suited for high-stakes queries on short-to-medium documents — terminology consistency checks, key term decisions, or reviewing a handful of specific segments. Avoid it in prompts you run on every segment.
+- **Segment numbers in `{{PROJECT}}` match the Trados editor.** After sending `{{PROJECT}}`, you can ask the AI about "segment 4" or "segment 12" and it will know exactly which segment you mean — the same number shown in the Trados grid.
 - **Batch Translate prompts receive one segment at a time.** You do not need to handle lists of segments or loop logic.
 - **Proofread prompts receive multiple segment pairs.** The built-in proofreading prompt shows the expected input/output format — follow that structure if you write a custom one.
 
