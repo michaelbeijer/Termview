@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -132,6 +134,9 @@ namespace Supervertaler.Trados
             UpdateBatchProviderDisplay();
             UpdateBatchSegmentCounts();
             PopulateBatchPromptDropdown();
+
+            // Restore persisted chat history
+            LoadChatHistory();
         }
 
         // ─── Document / Segment Events ────────────────────────────
@@ -263,6 +268,7 @@ namespace Supervertaler.Trados
             };
             _chatHistory.Add(userMsg);
             _control.Value.AddMessage(userMsg);
+            SaveChatHistory();
 
             // 2. Gather current context
             var sourceText = _activeDocument?.ActiveSegmentPair?.Source?.ToString();
@@ -401,6 +407,7 @@ namespace Supervertaler.Trados
                         _chatHistory.Add(assistantMsg);
                         _control.Value.AddMessage(assistantMsg);
                         _control.Value.SetThinking(false);
+                        SaveChatHistory();
                     });
                 }
                 catch (OperationCanceledException)
@@ -422,6 +429,7 @@ namespace Supervertaler.Trados
         {
             _chatHistory.Clear();
             _control.Value.ClearMessages();
+            SaveChatHistory();
         }
 
         private void OnStopRequested(object sender, EventArgs e)
@@ -1709,6 +1717,39 @@ namespace Supervertaler.Trados
                 return new List<ChatMessage>(history);
 
             return history.GetRange(history.Count - maxMessages, maxMessages);
+        }
+
+        // ─── Chat History Persistence ─────────────────────────────
+
+        private void SaveChatHistory()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ChatMessage>));
+                var path = UserDataPath.ChatHistoryFilePath;
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write))
+                    serializer.WriteObject(fs, _chatHistory);
+            }
+            catch { /* ignore save failures */ }
+        }
+
+        private void LoadChatHistory()
+        {
+            try
+            {
+                var path = UserDataPath.ChatHistoryFilePath;
+                if (!File.Exists(path)) return;
+                var serializer = new DataContractJsonSerializer(typeof(List<ChatMessage>));
+                List<ChatMessage> history;
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                    history = (List<ChatMessage>)serializer.ReadObject(fs);
+                if (history == null || history.Count == 0) return;
+                _chatHistory.AddRange(history);
+                foreach (var msg in history)
+                    _control.Value.AddMessage(msg);
+            }
+            catch { /* ignore load failures — start with empty history */ }
         }
 
         private string BuildLangPairString()

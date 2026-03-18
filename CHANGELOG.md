@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.10.7] — 2026-03-18
+
+### Added
+- **Persistent chat history** — the AI Assistant conversation is now saved to disk after each message and restored automatically when Trados restarts; history persists until you click the **Clear** button
+
+---
+
 ## [4.10.6] — 2026-03-18
 
 ### Added

@@ -81,6 +81,9 @@ namespace Supervertaler.Trados.Settings
         /// <summary>Path to the license activation file.</summary>
         public static string LicenseFilePath => Path.Combine(TradosDir, "license.json");
 
+        /// <summary>Path to the persisted AI Assistant chat history file.</summary>
+        public static string ChatHistoryFilePath => Path.Combine(TradosDir, "chat_history.json");
+
         /// <summary>Folder containing per-project settings overlays.</summary>
         public static string ProjectsDir => Path.Combine(TradosDir, "projects");
 

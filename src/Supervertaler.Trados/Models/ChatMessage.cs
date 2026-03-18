@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Supervertaler.Trados.Models
 {
@@ -10,9 +11,13 @@ namespace Supervertaler.Trados.Models
         System
     }
 
+    [DataContract]
     public class ChatMessage
     {
+        [DataMember(Name = "role")]
         public ChatRole Role { get; set; }
+
+        [DataMember(Name = "content")]
         public string Content { get; set; }
 
         /// <summary>
@@ -21,13 +26,16 @@ namespace Supervertaler.Trados.Models
         /// Used to show a short summary (e.g. "[source document — 47 segments]") in place of a
         /// large {{PROJECT}} expansion so the chat history stays readable.
         /// </summary>
+        [DataMember(Name = "displayContent", EmitDefaultValue = false)]
         public string DisplayContent { get; set; }
 
         /// <summary>
         /// Optional image attachments. Null means text-only (most messages).
         /// </summary>
+        [DataMember(Name = "images", EmitDefaultValue = false)]
         public List<ImageAttachment> Images { get; set; }
 
+        [DataMember(Name = "timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.Now;
 
         /// <summary>True if this message has one or more image attachments.</summary>
@@ -37,21 +45,27 @@ namespace Supervertaler.Trados.Models
     /// <summary>
     /// An image attached to a chat message for vision-enabled AI models.
     /// </summary>
+    [DataContract]
     public class ImageAttachment
     {
         /// <summary>Raw image bytes (PNG or JPEG).</summary>
+        [DataMember(Name = "data")]
         public byte[] Data { get; set; }
 
         /// <summary>MIME type, e.g. "image/png", "image/jpeg".</summary>
+        [DataMember(Name = "mimeType")]
         public string MimeType { get; set; }
 
         /// <summary>Display name for the thumbnail strip.</summary>
+        [DataMember(Name = "fileName")]
         public string FileName { get; set; }
 
         /// <summary>Original image width in pixels (for layout).</summary>
+        [DataMember(Name = "width")]
         public int Width { get; set; }
 
         /// <summary>Original image height in pixels (for layout).</summary>
+        [DataMember(Name = "height")]
         public int Height { get; set; }
     }
 
