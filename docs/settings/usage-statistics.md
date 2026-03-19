@@ -4,8 +4,6 @@
 You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
-## Usage Statistics
-
 Supervertaler for Trados includes an optional, anonymous usage statistics feature to help the developer understand how many people are using the plugin and what environments they are running it on.
 
 <figure><img src="../.gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
