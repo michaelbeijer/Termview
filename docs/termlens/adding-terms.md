@@ -95,8 +95,11 @@ Press **F2** to manually expand your current selection to word boundaries withou
 When you add a term and the **source** or **target** already exists in the termbase (but with a different translation), Supervertaler shows a prompt asking what you want to do:
 
 - **Add as Synonym** — merges the new translation into the existing entry as a synonym, keeping your termbase tidy
+- **Add & Edit…** — adds the synonym and opens the Term Entry Editor so you can review the metadata before saving
 - **Keep Both** — creates a separate entry alongside the existing one
 - **Cancel** — aborts the operation
+
+The merge prompt always displays terms in your **project's language direction**, regardless of how the termbase stores them internally. For example, in a Dutch → English project using an English → Dutch termbase, the dialog shows the Dutch source term first and the English target term second.
 
 **Example:** Your termbase already has **adhesion → hechting**. You select **adhesion → aanhechting** and press Alt+Down. The merge prompt appears because the source term “adhesion” already exists. Clicking “Add as Synonym” adds _aanhechting_ as a target synonym of the existing entry, so both translations are grouped together.
 

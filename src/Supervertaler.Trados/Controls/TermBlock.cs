@@ -369,25 +369,62 @@ namespace Supervertaler.Trados.Controls
                     g.DrawString(badgeText, BadgeFont, textBrush, tx, ty);
                 }
 
-                // Amber corner dot when entry has metadata (definition/domain/notes)
-                bool hasMetadata = _entries.Any(t =>
-                    !string.IsNullOrEmpty(t.Definition) ||
-                    !string.IsNullOrEmpty(t.Domain) ||
-                    !string.IsNullOrEmpty(t.Notes));
-                if (hasMetadata)
+            }
+
+            // Corner indicators — drawn outside the badge block so they appear
+            // regardless of whether a shortcut badge is visible.
+
+            // Amber corner dot when entry has metadata (definition/domain/notes)
+            bool hasMetadata = _entries.Any(t =>
+                !string.IsNullOrEmpty(t.Definition) ||
+                !string.IsNullOrEmpty(t.Domain) ||
+                !string.IsNullOrEmpty(t.Notes));
+            if (hasMetadata)
+            {
+                const int dotSize = 8;
+                float dotX = targetRect.Right - dotSize / 2f;
+                float dotY = targetRect.Top - dotSize / 2f;
+                using (var dotBrush = new SolidBrush(Color.FromArgb(245, 158, 11))) // amber #F59E0B
                 {
-                    const int dotSize = 8;
-                    float dotX = targetRect.Right - dotSize / 2f;
-                    float dotY = targetRect.Top - dotSize / 2f;
-                    using (var dotBrush = new SolidBrush(Color.FromArgb(245, 158, 11))) // amber #F59E0B
-                    {
-                        g.FillEllipse(dotBrush, dotX, dotY, dotSize, dotSize);
-                    }
-                    // White border so the dot pops against any chip color
-                    using (var borderPen = new Pen(Color.White, 1.5f))
-                    {
-                        g.DrawEllipse(borderPen, dotX, dotY, dotSize, dotSize);
-                    }
+                    g.FillEllipse(dotBrush, dotX, dotY, dotSize, dotSize);
+                }
+                // White border so the dot pops against any chip color
+                using (var borderPen = new Pen(Color.White, 1.5f))
+                {
+                    g.DrawEllipse(borderPen, dotX, dotY, dotSize, dotSize);
+                }
+            }
+
+            // "≡" synonym indicator when any entry has target synonyms
+            bool hasSynonyms = _entries.Any(t => t.TargetSynonyms != null && t.TargetSynonyms.Count > 0);
+            if (hasSynonyms)
+            {
+                const int iconSize = 10;
+                // Position to the left of the metadata dot (if present), or at top-right
+                float iconX = hasMetadata
+                    ? targetRect.Right - iconSize / 2f - 11
+                    : targetRect.Right - iconSize / 2f;
+                float iconY = targetRect.Top - iconSize / 2f;
+
+                // Draw a small filled circle background
+                using (var bgBrush = new SolidBrush(Color.FromArgb(99, 102, 241))) // indigo #6366F1
+                {
+                    g.FillEllipse(bgBrush, iconX, iconY, iconSize, iconSize);
+                }
+                using (var borderPen = new Pen(Color.White, 1.5f))
+                {
+                    g.DrawEllipse(borderPen, iconX, iconY, iconSize, iconSize);
+                }
+
+                // Draw three horizontal lines (≡) inside the circle
+                float cx = iconX + iconSize / 2f;
+                float cy = iconY + iconSize / 2f;
+                float lineHalf = 2.2f;
+                using (var linePen = new Pen(Color.White, 1f))
+                {
+                    g.DrawLine(linePen, cx - lineHalf, cy - 2f, cx + lineHalf, cy - 2f);
+                    g.DrawLine(linePen, cx - lineHalf, cy,      cx + lineHalf, cy);
+                    g.DrawLine(linePen, cx - lineHalf, cy + 2f, cx + lineHalf, cy + 2f);
                 }
             }
         }

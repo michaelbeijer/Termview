@@ -22,18 +22,33 @@ namespace Supervertaler.Trados.Controls
         private readonly List<MergeMatch> _matches;
         private readonly string _newSource;
         private readonly string _newTarget;
+        private readonly bool _isInverted;
 
         /// <summary>
         /// The list of merge matches the user is responding to.
         /// </summary>
         public List<MergeMatch> Matches => _matches;
 
+        /// <summary>
+        /// Creates the merge prompt dialog.
+        /// </summary>
+        /// <param name="matches">Merge candidates (source/target in DB direction).</param>
+        /// <param name="newSource">The new term's source (in DB direction).</param>
+        /// <param name="newTarget">The new term's target (in DB direction).</param>
+        /// <param name="isInverted">
+        /// True when the project's language direction is the inverse of the
+        /// termbase's language direction (e.g. NL→EN project using an EN→NL
+        /// termbase). When true, "source" and "target" labels are swapped in
+        /// the UI so the dialog matches the translator's perspective.
+        /// </param>
         public MergePromptDialog(
-            List<MergeMatch> matches, string newSource, string newTarget)
+            List<MergeMatch> matches, string newSource, string newTarget,
+            bool isInverted = false)
         {
             _matches = matches ?? new List<MergeMatch>();
             _newSource = newSource ?? "";
             _newTarget = newTarget ?? "";
+            _isInverted = isInverted;
 
             BuildUI();
         }
@@ -56,6 +71,11 @@ namespace Supervertaler.Trados.Controls
             int contentWidth = 460;
             int y = 16;
 
+            // When the termbase is inverted, swap source/target for display
+            // so the dialog matches the translator's project direction.
+            var displayNewSource = _isInverted ? _newTarget : _newSource;
+            var displayNewTarget = _isInverted ? _newSource : _newTarget;
+
             // --- "You are adding:" label ---
             var addingLabel = new Label
             {
@@ -69,7 +89,7 @@ namespace Supervertaler.Trados.Controls
             // --- New term (bold) ---
             var newTermLabel = new Label
             {
-                Text = $"  {_newSource}  \u2192  {_newTarget}",
+                Text = $"  {displayNewSource}  \u2192  {displayNewTarget}",
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 AutoSize = true,
                 Location = new Point(margin, y),
@@ -94,18 +114,28 @@ namespace Supervertaler.Trados.Controls
             string matchDescription;
             string synonymAction;
 
-            if (match.MatchType == "source")
+            // Display the existing match in project direction
+            var displayMatchSource = _isInverted ? match.TargetTerm : match.SourceTerm;
+            var displayMatchTarget = _isInverted ? match.SourceTerm : match.TargetTerm;
+
+            // When inverted, the DB match types are reversed from the project perspective:
+            // a DB "source" match means the project-target matched, and vice versa.
+            var effectiveMatchType = _isInverted
+                ? (match.MatchType == "source" ? "target" : "source")
+                : match.MatchType;
+
+            if (effectiveMatchType == "source")
             {
-                matchDescription = $"The source term \u201c{match.SourceTerm}\u201d already exists " +
-                    $"with target \u201c{match.TargetTerm}\u201d";
-                synonymAction = $"Add \u201c{_newTarget}\u201d as a target synonym " +
+                matchDescription = $"The source term \u201c{displayMatchSource}\u201d already exists " +
+                    $"with target \u201c{displayMatchTarget}\u201d";
+                synonymAction = $"Add \u201c{displayNewTarget}\u201d as a target synonym " +
                     $"to the existing entry?";
             }
             else
             {
-                matchDescription = $"The target term \u201c{match.TargetTerm}\u201d already exists " +
-                    $"with source \u201c{match.SourceTerm}\u201d";
-                synonymAction = $"Add \u201c{_newSource}\u201d as a source synonym " +
+                matchDescription = $"The target term \u201c{displayMatchTarget}\u201d already exists " +
+                    $"with source \u201c{displayMatchSource}\u201d";
+                synonymAction = $"Add \u201c{displayNewSource}\u201d as a source synonym " +
                     $"to the existing entry?";
             }
 

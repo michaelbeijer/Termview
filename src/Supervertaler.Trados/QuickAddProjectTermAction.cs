@@ -143,6 +143,7 @@ namespace Supervertaler.Trados
                 // Keep originals for the in-memory index update.
                 var indexSourceText = sourceText;
                 var indexTargetText = targetText;
+                bool isInverted = false;
                 try
                 {
                     var projSrcLang = doc.ActiveFile?.SourceFile?.Language?.DisplayName ?? "";
@@ -154,6 +155,7 @@ namespace Supervertaler.Trados
                             tbSrcLang.StartsWith(projSrcLang, StringComparison.OrdinalIgnoreCase);
                         if (!match)
                         {
+                            isInverted = true;
                             var tmp = sourceText;
                             sourceText = targetText;
                             targetText = tmp;
@@ -172,7 +174,7 @@ namespace Supervertaler.Trados
                     if (mergeMatches.Count > 0)
                     {
                         using (var mergeDlg = new MergePromptDialog(
-                            mergeMatches, sourceText, targetText))
+                            mergeMatches, sourceText, targetText, isInverted))
                         {
                             var mergeResult = mergeDlg.ShowDialog();
 

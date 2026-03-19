@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.14.1] — 2026-03-19
+
+### Added
+- **Synonym indicator on term chips** — a small indigo ≡ icon now appears in the top-right corner of a term chip when the entry has target synonyms, so you can see at a glance which terms have alternative translations without hovering.
+- **"Open Plugins folder" link in update dialog** — when a new version is available, the update notification now includes a clickable link that opens the Plugins/Unpacked folder in Explorer. Essential for Mac/Parallels users who must manually delete the old unpacked folder before installing an update.
+
+### Fixed
+- **Metadata indicator always visible** — the amber metadata dot (definition/domain/notes) now appears on all term chips, not only on chips that also have a shortcut badge.
+- **Merge prompt respects project direction** — the "Similar Term Found" dialog now displays terms in the project's language direction when working with an inverted termbase (e.g. NL→EN project using an EN→NL termbase). Previously, source and target labels were swapped.
+
+---
+
 ## [4.14.0] — 2026-03-19
 
 ### Added
