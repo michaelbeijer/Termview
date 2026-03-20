@@ -26,18 +26,18 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Checks GitHub for a newer release. Returns (newVersion, releaseUrl)
+        /// Checks GitHub for a newer release. Returns (newVersion, releaseUrl, pluginDownloadUrl)
         /// if an update is available, or null if the user is up to date (or if
         /// the check fails for any reason).
         /// </summary>
-        public static async Task<(string version, string url)?> CheckForUpdateAsync()
+        public static async Task<(string version, string url, string pluginUrl)?> CheckForUpdateAsync()
         {
             var settings = TermLensSettings.Load();
 
             // Get the latest release from GitHub (first item is newest)
             var json = await _http.GetStringAsync(ReleasesUrl + "?per_page=1");
 
-            // Parse the JSON array — we only need tag_name and html_url from the first element
+            // Parse the JSON array
             var releases = ParseReleases(json);
             if (releases == null || releases.Length == 0) return null;
 
@@ -58,7 +58,21 @@ namespace Supervertaler.Trados.Core
             if (string.Equals(settings.SkippedUpdateVersion, latestTag, StringComparison.OrdinalIgnoreCase))
                 return null;
 
-            return (latestTag, releaseUrl);
+            // Find the .sdlplugin download URL from release assets
+            string pluginUrl = null;
+            if (latest.Assets != null)
+            {
+                foreach (var asset in latest.Assets)
+                {
+                    if (asset.Name != null && asset.Name.EndsWith(".sdlplugin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        pluginUrl = asset.BrowserDownloadUrl;
+                        break;
+                    }
+                }
+            }
+
+            return (latestTag, releaseUrl, pluginUrl);
         }
 
         /// <summary>
@@ -137,6 +151,23 @@ namespace Supervertaler.Trados.Core
             if (parts.Length >= 3) int.TryParse(parts[2], out patch);
         }
 
+        /// <summary>
+        /// Downloads a file from a URL to a local path.
+        /// Used by the one-click update to download the .sdlplugin directly.
+        /// </summary>
+        internal static async Task DownloadFileAsync(string url, string destinationPath)
+        {
+            using (var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+            {
+                response.EnsureSuccessStatusCode();
+                using (var httpStream = await response.Content.ReadAsStreamAsync())
+                using (var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await httpStream.CopyToAsync(fileStream);
+                }
+            }
+        }
+
         // --- Minimal JSON parsing for GitHub releases API ---
 
         [DataContract]
@@ -147,6 +178,19 @@ namespace Supervertaler.Trados.Core
 
             [DataMember(Name = "html_url")]
             public string HtmlUrl { get; set; }
+
+            [DataMember(Name = "assets")]
+            public GitHubAsset[] Assets { get; set; }
+        }
+
+        [DataContract]
+        private class GitHubAsset
+        {
+            [DataMember(Name = "name")]
+            public string Name { get; set; }
+
+            [DataMember(Name = "browser_download_url")]
+            public string BrowserDownloadUrl { get; set; }
         }
 
         private static GitHubRelease[] ParseReleases(string json)

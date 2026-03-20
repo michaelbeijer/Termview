@@ -387,6 +387,7 @@ namespace Supervertaler.Trados
             var capturedBaseUrl = baseUrl;
             var capturedSystemPrompt = systemPrompt;
             var capturedMessages = messagesToSend;
+            var capturedMaxTokens = args.MaxTokens ?? 4096;
 
             // 7. Call LLM async
             Task.Run(async () =>
@@ -396,7 +397,7 @@ namespace Supervertaler.Trados
                     var client = new LlmClient(capturedProvider, capturedModel, capturedKey, capturedBaseUrl);
                     var response = await client.SendChatAsync(
                         capturedMessages, capturedSystemPrompt,
-                        maxTokens: 4096, cancellationToken: ct);
+                        maxTokens: capturedMaxTokens, cancellationToken: ct);
 
                     var assistantMsg = new ChatMessage
                     {
@@ -555,7 +556,9 @@ namespace Supervertaler.Trados
                 var displayText = PromptGenerator.BuildDisplayMessage(ctx);
 
                 // Phase 6: Send via chat (switches to AI Assistant panel)
-                _control.Value.SubmitMessage(metaPrompt, displayText);
+                // Use 32768 tokens for prompt generation — comprehensive prompts with
+                // large glossaries and TM pairs can exceed 16K tokens
+                _control.Value.SubmitMessage(metaPrompt, displayText, maxTokens: 32768);
             });
         }
 

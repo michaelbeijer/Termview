@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.16.1] — 2026-03-20
+
+### Added
+- **One-click plugin update** — the "Update Available" dialogue now has an "Install Update" button that downloads and installs the new version directly, without opening a browser. Just click, restart Trados, and you're running the latest version.
+- **"What's new" link in update dialogue** — view the release notes before updating.
+
+### Fixed
+- **Prompt generation truncation** — the "Analyse Project & Generate Prompt" feature no longer cuts off long prompts. Output token limit increased from 4,096 to 32,768, allowing comprehensive prompts with large glossaries and TM reference pairs.
+- **Correct version in plugin packages** — the `.sdlplugin` manifest now reads the version from the project file instead of using a hardcoded value. The DLL, manifest, and plugin.xml versions are guaranteed to match.
+- **Stale assembly references** — fixed two action entries in plugin.xml that were stuck on old version numbers (4.5.0 and 4.10.0). The version bump script now uses pattern matching to catch all references, preventing this from recurring.
+
+---
+
 ## [4.16.0] — 2026-03-20
 
 ### Added

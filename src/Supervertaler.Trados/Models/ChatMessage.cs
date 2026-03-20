@@ -82,5 +82,12 @@ namespace Supervertaler.Trados.Models
         /// instead of <see cref="Text"/>. <see cref="Text"/> is always sent to the AI.
         /// </summary>
         public string DisplayText { get; set; }
+
+        /// <summary>
+        /// Optional max output token override for this request. Used by prompt generation
+        /// which needs more output tokens than regular chat (prompts can be 5000+ words).
+        /// When null, the handler uses its default.
+        /// </summary>
+        public int? MaxTokens { get; set; }
     }
 }

@@ -36,11 +36,12 @@ def bump_plugin_xml(old_four, new_four):
     c1 = text.count(f'version="{old_four}"')
     text = text.replace(f'version="{old_four}"', f'version="{new_four}"')
 
-    # Assembly binding references (only Supervertaler.Trados, not Sdl.*)
-    old_asm = f"Supervertaler.Trados, Version={old_four}"
-    new_asm = f"Supervertaler.Trados, Version={new_four}"
-    c2 = text.count(old_asm)
-    text = text.replace(old_asm, new_asm)
+    # Assembly binding references — match ANY version for Supervertaler.Trados
+    # to catch stale entries that were added at an older version.
+    asm_pattern = re.compile(r"Supervertaler\.Trados, Version=[\d.]+,")
+    new_asm = f"Supervertaler.Trados, Version={new_four},"
+    c2 = len(asm_pattern.findall(text))
+    text = asm_pattern.sub(new_asm, text)
 
     with open(PLUGIN_XML, "wb") as f:
         f.write(b'\xff\xfe')

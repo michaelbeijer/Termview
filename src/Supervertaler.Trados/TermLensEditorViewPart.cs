@@ -109,7 +109,7 @@ namespace Supervertaler.Trados
 
                     ctrl.BeginInvoke(new Action(() =>
                     {
-                        ShowUpdateDialog(update.Value.version, update.Value.url);
+                        ShowUpdateDialog(update.Value.version, update.Value.url, update.Value.pluginUrl);
                     }));
                 }
                 catch
@@ -1737,9 +1737,10 @@ namespace Supervertaler.Trados
             });
         }
 
-        private void ShowUpdateDialog(string newVersion, string releaseUrl)
+        private void ShowUpdateDialog(string newVersion, string releaseUrl, string pluginDownloadUrl)
         {
             var currentVersion = UpdateChecker.GetCurrentVersion();
+            bool canOneClick = !string.IsNullOrEmpty(pluginDownloadUrl);
 
             using (var form = new Form())
             {
@@ -1748,7 +1749,7 @@ namespace Supervertaler.Trados
                 form.StartPosition = FormStartPosition.CenterScreen;
                 form.MaximizeBox = false;
                 form.MinimizeBox = false;
-                form.Size = new System.Drawing.Size(420, 240);
+                form.Size = new System.Drawing.Size(440, 260);
                 form.Font = new System.Drawing.Font("Segoe UI", 9f);
 
                 var lbl = new Label
@@ -1757,21 +1758,31 @@ namespace Supervertaler.Trados
                            $"Latest version:   v{newVersion}\n" +
                            $"Your version:      v{currentVersion}",
                     Location = new System.Drawing.Point(16, 16),
-                    Size = new System.Drawing.Size(380, 80),
+                    Size = new System.Drawing.Size(400, 80),
                     AutoSize = false
                 };
 
-                // Link to open the Unpacked plugins folder — essential for
-                // Mac/Parallels users who must manually delete the old folder
-                // before installing the update (Trados won't re-extract otherwise).
+                // Status label — used to show download progress / success
+                var lblStatus = new Label
+                {
+                    Text = "",
+                    Location = new System.Drawing.Point(16, 96),
+                    Size = new System.Drawing.Size(400, 18),
+                    ForeColor = System.Drawing.SystemColors.GrayText,
+                    AutoSize = false,
+                    Visible = false
+                };
+
+                // Link to open the Unpacked plugins folder — fallback for
+                // Mac/Parallels users or if automatic install fails.
                 var unpackedPath = System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     @"Trados\Trados Studio\18\Plugins\Unpacked");
                 var lnkFolder = new LinkLabel
                 {
-                    Text = "Open Plugins folder (delete old version before updating)",
-                    Location = new System.Drawing.Point(16, 92),
-                    Size = new System.Drawing.Size(380, 18),
+                    Text = "Open Plugins folder (manual install)",
+                    Location = new System.Drawing.Point(16, 118),
+                    Size = new System.Drawing.Size(400, 18),
                     AutoSize = false
                 };
                 lnkFolder.LinkClicked += (s, ev) =>
@@ -1787,12 +1798,26 @@ namespace Supervertaler.Trados
                     catch { }
                 };
 
-                var btnDownload = new Button
+                // Release notes link
+                var lnkNotes = new LinkLabel
                 {
-                    Text = "Download",
-                    DialogResult = DialogResult.Yes,
-                    Location = new System.Drawing.Point(16, 150),
-                    Width = 100,
+                    Text = "What's new in this version?",
+                    Location = new System.Drawing.Point(16, 140),
+                    Size = new System.Drawing.Size(400, 18),
+                    AutoSize = false
+                };
+                lnkNotes.LinkClicked += (s, ev) =>
+                {
+                    try { System.Diagnostics.Process.Start(releaseUrl); }
+                    catch { }
+                };
+
+                var btnInstall = new Button
+                {
+                    Text = canOneClick ? "Install Update" : "Download",
+                    DialogResult = DialogResult.None, // handled manually for one-click
+                    Location = new System.Drawing.Point(16, 172),
+                    Width = 120,
                     Height = 30,
                     FlatStyle = FlatStyle.System
                 };
@@ -1801,7 +1826,7 @@ namespace Supervertaler.Trados
                 {
                     Text = "Skip This Version",
                     DialogResult = DialogResult.Ignore,
-                    Location = new System.Drawing.Point(124, 150),
+                    Location = new System.Drawing.Point(144, 172),
                     Width = 130,
                     Height = 30,
                     FlatStyle = FlatStyle.System
@@ -1811,25 +1836,96 @@ namespace Supervertaler.Trados
                 {
                     Text = "Remind Me Later",
                     DialogResult = DialogResult.Cancel,
-                    Location = new System.Drawing.Point(262, 150),
+                    Location = new System.Drawing.Point(282, 172),
                     Width = 130,
                     Height = 30,
                     FlatStyle = FlatStyle.System
                 };
 
-                form.Controls.AddRange(new Control[] { lbl, lnkFolder, btnDownload, btnSkip, btnLater });
-                form.AcceptButton = btnDownload;
+                btnInstall.Click += async (s, ev) =>
+                {
+                    if (!canOneClick)
+                    {
+                        // Fallback: open the release page in the browser
+                        try { System.Diagnostics.Process.Start(releaseUrl); }
+                        catch { }
+                        form.DialogResult = DialogResult.Yes;
+                        return;
+                    }
+
+                    // One-click install: download, clean up, prompt restart
+                    btnInstall.Enabled = false;
+                    btnSkip.Enabled = false;
+                    btnLater.Enabled = false;
+                    lblStatus.Visible = true;
+                    lblStatus.Text = "Downloading update...";
+
+                    try
+                    {
+                        // 1. Download .sdlplugin to Packages folder
+                        var packagesDir = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                            @"Trados\Trados Studio\18\Plugins\Packages");
+                        System.IO.Directory.CreateDirectory(packagesDir);
+
+                        var pluginPath = System.IO.Path.Combine(packagesDir, "Supervertaler for Trados.sdlplugin");
+
+                        await UpdateChecker.DownloadFileAsync(pluginDownloadUrl, pluginPath);
+
+                        // 2. Rename current Unpacked folder to .old so Trados
+                        //    re-extracts from the new package on next start
+                        lblStatus.Text = "Preparing update...";
+                        var unpackedDir = System.IO.Path.Combine(unpackedPath, "Supervertaler for Trados");
+                        var oldDir = unpackedDir + ".old";
+
+                        // Clean up any leftover .old folder from a previous update
+                        if (System.IO.Directory.Exists(oldDir))
+                        {
+                            try { System.IO.Directory.Delete(oldDir, true); } catch { }
+                        }
+
+                        // Rename current folder — Windows allows this even with
+                        // locked DLLs, the files stay accessible via open handles
+                        if (System.IO.Directory.Exists(unpackedDir))
+                        {
+                            try { System.IO.Directory.Move(unpackedDir, oldDir); } catch { }
+                        }
+
+                        // 3. Done — prompt restart
+                        lblStatus.ForeColor = System.Drawing.Color.FromArgb(0, 128, 0);
+                        lblStatus.Text = "Update installed successfully.";
+                        lnkFolder.Visible = false;
+                        lnkNotes.Visible = false;
+
+                        MessageBox.Show(
+                            $"Supervertaler for Trados v{newVersion} has been installed.\n\n" +
+                            "Please close and restart Trados Studio to load the new version.",
+                            "Update Installed",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        form.DialogResult = DialogResult.Yes;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Download failed — fall back to opening the release page
+                        lblStatus.ForeColor = System.Drawing.Color.FromArgb(192, 0, 0);
+                        lblStatus.Text = "Download failed. Opening release page instead...";
+                        btnInstall.Enabled = true;
+                        btnSkip.Enabled = true;
+                        btnLater.Enabled = true;
+
+                        try { System.Diagnostics.Process.Start(releaseUrl); }
+                        catch { }
+                    }
+                };
+
+                form.Controls.AddRange(new Control[] { lbl, lblStatus, lnkFolder, lnkNotes, btnInstall, btnSkip, btnLater });
+                form.AcceptButton = btnInstall;
                 form.CancelButton = btnLater;
 
                 var result = form.ShowDialog();
 
-                if (result == DialogResult.Yes)
-                {
-                    // Open the release page in the default browser
-                    try { System.Diagnostics.Process.Start(releaseUrl); }
-                    catch { }
-                }
-                else if (result == DialogResult.Ignore)
+                if (result == DialogResult.Ignore)
                 {
                     // Save "skip this version" to settings
                     var settings = TermLensSettings.Load();

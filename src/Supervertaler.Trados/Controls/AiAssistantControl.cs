@@ -56,6 +56,10 @@ namespace Supervertaler.Trados.Controls
         // Used by SubmitMessage(text, displayText) for {{PROJECT}} prompts.
         private string _pendingDisplayText;
 
+        // Optional max token override for the next API call.
+        // Used by prompt generation which needs more output tokens than regular chat.
+        private int? _pendingMaxTokens;
+
         private const int MaxImages = 5;
         private const int MaxImageBytes = 10 * 1024 * 1024; // 10 MB
 
@@ -862,12 +866,15 @@ namespace Supervertaler.Trados.Controls
 
             var displayText = _pendingDisplayText;
             _pendingDisplayText = null;
+            var maxTokens = _pendingMaxTokens;
+            _pendingMaxTokens = null;
 
             SendRequested?.Invoke(this, new ChatSendEventArgs
             {
                 Text = text ?? "",
                 Images = images,
-                DisplayText = displayText
+                DisplayText = displayText,
+                MaxTokens = maxTokens
             });
         }
 
@@ -974,7 +981,7 @@ namespace Supervertaler.Trados.Controls
         /// sent to the AI. Use this when <paramref name="text"/> contains a large {{PROJECT}}
         /// expansion that would clutter the chat history.
         /// </summary>
-        public void SubmitMessage(string text, string displayText)
+        public void SubmitMessage(string text, string displayText, int? maxTokens = null)
         {
             if (_isThinking) return;
             if (string.IsNullOrWhiteSpace(text)) return;
@@ -983,6 +990,7 @@ namespace Supervertaler.Trados.Controls
             _tabControl.SelectedIndex = 0;
 
             _pendingDisplayText = displayText;
+            _pendingMaxTokens = maxTokens;
             _txtInput.Text = text;
             DoSend();
         }

@@ -11,6 +11,7 @@ to read plugin packages. This means the .sdlplugin file must include:
 """
 
 import os
+import re
 import sys
 import uuid
 import zipfile
@@ -133,13 +134,40 @@ def build_manifest_rels(files):
     )
 
 
-def build_manifest_xml():
+def read_version_from_csproj(build_dir):
+    """Read the <Version> from the .csproj and return it as a 4-part version string."""
+    # Walk up from build_dir to find the .csproj
+    csproj_path = os.path.join(
+        os.path.dirname(os.path.dirname(build_dir)),
+        "Supervertaler.Trados.csproj",
+    )
+    if not os.path.exists(csproj_path):
+        # Fallback: look relative to this script
+        csproj_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "src", "Supervertaler.Trados", "Supervertaler.Trados.csproj",
+        )
+    with open(csproj_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    match = re.search(r"<Version>([\d.]+)</Version>", content)
+    if not match:
+        print("ERROR: Could not find <Version> in .csproj")
+        sys.exit(1)
+    version = match.group(1)
+    # Ensure 4-part version (e.g. 4.16.0 → 4.16.0.0)
+    parts = version.split(".")
+    while len(parts) < 4:
+        parts.append("0")
+    return ".".join(parts[:4])
+
+
+def build_manifest_xml(version):
     """Build pluginpackage.manifest.xml with Include section for extra files."""
     include_lines = "\n".join(f"    <File>{f}</File>" for f in INCLUDE_FILES)
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <PluginPackage xmlns="http://www.sdl.com/Plugins/PluginPackage/1.0">
   <PlugInName>Supervertaler for Trados</PlugInName>
-  <Version>2.0.0.0</Version>
+  <Version>{version}</Version>
   <Description>Terminology display and AI translation for Trados Studio by Supervertaler.</Description>
   <Author>Michael Beijer</Author>
   <RequiredProduct name="TradosStudio" minversion="18.0" maxversion="18.9" />
@@ -164,7 +192,9 @@ def main():
             print(f"ERROR: Missing file: {path}")
             sys.exit(1)
 
-    print(f"Creating OPC package: {output_path}")
+    # Read version from .csproj for the manifest
+    version = read_version_from_csproj(build_dir)
+    print(f"Creating OPC package: {output_path} (version {version})")
 
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
         # 1. Write plugin files
@@ -174,7 +204,7 @@ def main():
             print(f"  + {f} ({os.path.getsize(src):,} bytes)")
 
         # 2. Write pluginpackage.manifest.xml (generated, not from build output)
-        manifest = build_manifest_xml()
+        manifest = build_manifest_xml(version)
         zf.writestr("pluginpackage.manifest.xml", manifest.encode("utf-8"))
         print(f"  + pluginpackage.manifest.xml (generated)")
 
