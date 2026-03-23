@@ -9,6 +9,10 @@
 
 ### Added
 - **Prompt name in Reports tab** — QuickLauncher entries now show the prompt template name in the header (e.g. "QuickLauncher · Explain in Context · 14:32:05") instead of generic "Chat"
+- **Clone prompt** — right-click any prompt in the Prompt Manager and select "Clone" to create a copy with "(2)" appended to the name
+
+### Fixed (prompts)
+- **New prompts in subfolders now saved correctly** — creating a prompt while a subfolder (e.g. QuickLauncher/Trados-specific) was selected would create a wrongly-named folder with underscores instead of placing the file in the correct subfolder
 
 ---
 

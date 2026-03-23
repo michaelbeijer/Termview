@@ -201,9 +201,20 @@ namespace Supervertaler.Trados.Core
             else
             {
                 // New prompt: build path from domain + name
-                var folder = string.IsNullOrEmpty(prompt.Domain)
-                    ? PromptsDir
-                    : Path.Combine(PromptsDir, SanitizeFileName(prompt.Domain));
+                // Domain may contain forward slashes for nested folders (e.g. "QuickLauncher/Trados-specific")
+                // — sanitise each path segment individually to preserve the directory structure
+                string folder;
+                if (string.IsNullOrEmpty(prompt.Domain))
+                {
+                    folder = PromptsDir;
+                }
+                else
+                {
+                    var parts = prompt.Domain.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                    folder = PromptsDir;
+                    foreach (var part in parts)
+                        folder = Path.Combine(folder, SanitizeFileName(part));
+                }
                 Directory.CreateDirectory(folder);
                 filePath = Path.Combine(folder, SanitizeFileName(prompt.Name) + ".svprompt");
             }
@@ -591,6 +602,14 @@ namespace Supervertaler.Trados.Core
         }
 
         private static string EscapeYamlString(string s)
+        {
+            return EscapeYaml(s);
+        }
+
+        /// <summary>
+        /// Escapes a string for safe use inside double-quoted YAML values.
+        /// </summary>
+        public static string EscapeYaml(string s)
         {
             return (s ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
         }

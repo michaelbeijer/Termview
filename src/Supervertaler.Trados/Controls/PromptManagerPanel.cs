@@ -264,6 +264,10 @@ namespace Supervertaler.Trados.Controls
             miEdit.Click += OnEditPrompt;
             _treeContextMenu.Items.Add(miEdit);
 
+            var miClone = new ToolStripMenuItem("Clone");
+            miClone.Click += OnClonePrompt;
+            _treeContextMenu.Items.Add(miClone);
+
             var miDelete = new ToolStripMenuItem("Delete");
             miDelete.Click += OnDeletePrompt;
             _treeContextMenu.Items.Add(miDelete);
@@ -296,6 +300,7 @@ namespace Supervertaler.Trados.Controls
 
                 // Show/hide items based on whether a prompt or folder is selected
                 miEdit.Visible = prompt != null;
+                miClone.Visible = prompt != null;
                 miDelete.Visible = prompt != null;
                 miShortcut.Visible = prompt != null && prompt.IsQuickLauncher;
                 miDeleteFolder.Visible = isFolder;
@@ -1070,10 +1075,9 @@ namespace Supervertaler.Trados.Controls
             {
                 if (_tvPrompts.SelectedNode.Tag is string folderPath && folderPath != SystemPromptTag)
                 {
-                    // Selected a folder — use the folder name as domain
-                    var folderName = Path.GetFileName(folderPath);
-                    if (!string.IsNullOrEmpty(folderName))
-                        preFillDomain = folderName;
+                    // Selected a folder — use the full relative path as domain
+                    if (!string.IsNullOrEmpty(folderPath))
+                        preFillDomain = folderPath;
                 }
                 else if (_tvPrompts.SelectedNode.Tag is PromptTemplate pt)
                 {
@@ -1152,6 +1156,49 @@ namespace Supervertaler.Trados.Controls
                 _library.DeletePrompt(selected);
                 RefreshTree();
             }
+        }
+
+        private void OnClonePrompt(object sender, EventArgs e)
+        {
+            var selected = GetSelectedPrompt();
+            if (selected == null) return;
+
+            // Read the original file content
+            if (string.IsNullOrEmpty(selected.FilePath) || !System.IO.File.Exists(selected.FilePath))
+                return;
+
+            var originalContent = System.IO.File.ReadAllText(selected.FilePath);
+
+            // Generate a unique clone name: "Name (2)", "Name (3)", etc.
+            var dir = Path.GetDirectoryName(selected.FilePath);
+            var baseName = selected.Name;
+            string cloneName = null;
+            string clonePath = null;
+
+            for (int i = 2; i <= 99; i++)
+            {
+                var candidate = $"{baseName} ({i})";
+                var candidatePath = Path.Combine(dir, candidate + ".svprompt");
+                if (!System.IO.File.Exists(candidatePath))
+                {
+                    cloneName = candidate;
+                    clonePath = candidatePath;
+                    break;
+                }
+            }
+
+            if (cloneName == null) return;
+
+            // Update the name in the YAML front matter
+            var cloneContent = originalContent;
+            var namePattern = new System.Text.RegularExpressions.Regex(
+                @"^name:\s*""[^""]*""", System.Text.RegularExpressions.RegexOptions.Multiline);
+            cloneContent = namePattern.Replace(cloneContent,
+                $"name: \"{Core.PromptLibrary.EscapeYaml(cloneName)}\"", 1);
+
+            System.IO.File.WriteAllText(clonePath, cloneContent);
+            _library.Refresh();
+            RefreshTree();
         }
 
         private void OnRefresh(object sender, EventArgs e)
