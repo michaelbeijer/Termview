@@ -112,6 +112,24 @@ namespace Supervertaler.Trados
             // and Closed fires before item click handlers run, causing ObjectDisposedException.
             // ContextMenuStrip is small; GC handles it.
             var menu = new ContextMenuStrip();
+            menu.ShowItemToolTips = true;
+
+            // Header: "Supervertaler QuickLauncher" — opens QuickLauncher prompts folder
+            var header = new ToolStripMenuItem("Supervertaler QuickLauncher");
+            header.Font = new System.Drawing.Font(header.Font, System.Drawing.FontStyle.Bold);
+            header.ToolTipText = "Click to open the QuickLauncher prompts folder";
+            header.Click += (s, e) =>
+            {
+                var qlDir = System.IO.Path.Combine(
+                    Settings.UserDataPath.PromptLibraryDir, "QuickLauncher");
+                if (System.IO.Directory.Exists(qlDir))
+                    System.Diagnostics.Process.Start("explorer.exe", qlDir);
+                else
+                    System.Diagnostics.Process.Start("explorer.exe",
+                        Settings.UserDataPath.PromptLibraryDir);
+            };
+            menu.Items.Add(header);
+            menu.Items.Add(new ToolStripSeparator());
 
             // Determine whether custom slot assignments exist
             var hasCustomSlots = settings?.AiSettings?.QuickLauncherSlots != null
