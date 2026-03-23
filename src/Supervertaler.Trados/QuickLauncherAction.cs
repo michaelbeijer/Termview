@@ -67,8 +67,10 @@ namespace Supervertaler.Trados
 
             if (doc != null)
             {
-                sourceText = doc.ActiveSegmentPair?.Source?.ToString() ?? "";
-                targetText = doc.ActiveSegmentPair?.Target?.ToString() ?? "";
+                sourceText = doc.ActiveSegmentPair?.Source != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Source) : "";
+                targetText = doc.ActiveSegmentPair?.Target != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Target) : "";
 
                 try
                 {

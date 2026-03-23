@@ -73,8 +73,11 @@ namespace Supervertaler.Trados
                 // Get the term text — check source selection first, then target selection.
                 // Non-translatables only need one text (target = source), so we accept
                 // selected text from either column.
-                string fullSource = doc.ActiveSegmentPair?.Source?.ToString() ?? "";
-                string fullTarget = doc.ActiveSegmentPair?.Target?.ToString() ?? "";
+                // Use GetFinalText to strip tracked changes
+                string fullSource = doc.ActiveSegmentPair?.Source != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Source) : "";
+                string fullTarget = doc.ActiveSegmentPair?.Target != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Target) : "";
                 string sourceText = null;
 
                 try

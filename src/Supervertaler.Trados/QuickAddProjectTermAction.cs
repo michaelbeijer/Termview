@@ -70,9 +70,11 @@ namespace Supervertaler.Trados
                     return;
                 }
 
-                // Get text from source and target segments
-                string fullSource = doc.ActiveSegmentPair?.Source?.ToString() ?? "";
-                string fullTarget = doc.ActiveSegmentPair?.Target?.ToString() ?? "";
+                // Get text from source and target segments (use GetFinalText to strip tracked changes)
+                string fullSource = doc.ActiveSegmentPair?.Source != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Source) : "";
+                string fullTarget = doc.ActiveSegmentPair?.Target != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Target) : "";
                 string sourceText = fullSource;
                 string targetText = fullTarget;
 

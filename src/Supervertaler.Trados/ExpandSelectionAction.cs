@@ -43,8 +43,10 @@ namespace Supervertaler.Trados
                 var selection = doc.Selection;
                 if (selection == null) return;
 
-                string fullSource = doc.ActiveSegmentPair?.Source?.ToString() ?? "";
-                string fullTarget = doc.ActiveSegmentPair?.Target?.ToString() ?? "";
+                string fullSource = doc.ActiveSegmentPair?.Source != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Source) : "";
+                string fullTarget = doc.ActiveSegmentPair?.Target != null
+                    ? SegmentTagHandler.GetFinalText(doc.ActiveSegmentPair.Target) : "";
 
                 string srcSel = null;
                 string tgtSel = null;

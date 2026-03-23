@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.18.5] — 2026-03-23
+
+### Fixed
+- **Tracked changes no longer corrupt term additions** — Add Term (Ctrl+Alt+T), Quick-Add (Alt+Down/Up), Non-Translatable (Ctrl+Alt+N), QuickLauncher prompts, and Expand Selection now strip deleted tracked changes, adding only the final text
+- **QuickLauncher segment context** — QuickLauncher chat prompts and slot runner now pass clean segment text without tracked changes markup
+
+---
+
 ## [4.18.4] — 2026-03-23
 
 ### Fixed
