@@ -10,6 +10,7 @@ namespace Supervertaler.Trados.Models
         Translate,
         BatchTranslate,
         Proofread,
+        PostEdit,
         QuickLauncher,
         PromptGeneration,
         ConnectionTest
@@ -49,6 +50,7 @@ namespace Supervertaler.Trados.Models
                     case PromptLogFeature.Translate: baseLabel = "Translate"; break;
                     case PromptLogFeature.BatchTranslate: baseLabel = "Batch Translate"; break;
                     case PromptLogFeature.Proofread: baseLabel = "Proofread"; break;
+                    case PromptLogFeature.PostEdit: baseLabel = "Post-Edit"; break;
                     case PromptLogFeature.QuickLauncher: baseLabel = "QuickLauncher"; break;
                     case PromptLogFeature.PromptGeneration: baseLabel = "Generate Prompt"; break;
                     case PromptLogFeature.ConnectionTest: baseLabel = "Connection Test"; break;

@@ -639,6 +639,37 @@ namespace Supervertaler.Trados.Controls
         }
 
         /// <summary>
+        /// Selects a folder node in the tree by name (e.g. "QuickLauncher").
+        /// Searches top-level category nodes for a match.
+        /// </summary>
+        public void SelectFolder(string folderName)
+        {
+            if (string.IsNullOrEmpty(folderName) || _tvPrompts == null) return;
+            foreach (TreeNode node in _tvPrompts.Nodes)
+            {
+                var found = FindFolderNode(node, folderName);
+                if (found != null)
+                {
+                    _tvPrompts.SelectedNode = found;
+                    found.Expand();
+                    return;
+                }
+            }
+        }
+
+        private TreeNode FindFolderNode(TreeNode parent, string folderName)
+        {
+            if (parent.Text.Equals(folderName, StringComparison.OrdinalIgnoreCase))
+                return parent;
+            foreach (TreeNode child in parent.Nodes)
+            {
+                var found = FindFolderNode(child, folderName);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Applies changes back to AI settings.
         /// </summary>
         public void ApplyToSettings(AiSettings settings)

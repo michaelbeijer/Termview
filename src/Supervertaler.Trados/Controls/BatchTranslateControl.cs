@@ -22,7 +22,12 @@ namespace Supervertaler.Trados.Controls
         private Panel _modePanel;
         private RadioButton _rbTranslate;
         private RadioButton _rbProofread;
+        private RadioButton _rbPostEdit;
         private BatchMode _currentMode = BatchMode.Translate;
+
+        // Post-edit level
+        private Label _lblPostEditLevel;
+        private ComboBox _cmbPostEditLevel;
 
         // Configuration
         private ComboBox _cmbScope;
@@ -57,6 +62,9 @@ namespace Supervertaler.Trados.Controls
 
         /// <summary>Fired when user clicks "Proofread".</summary>
         public event EventHandler ProofreadRequested;
+
+        /// <summary>Fired when user clicks "Post-Edit".</summary>
+        public event EventHandler PostEditRequested;
 
         /// <summary>Fired when user clicks "Stop".</summary>
         public event EventHandler StopRequested;
@@ -139,8 +147,20 @@ namespace Supervertaler.Trados.Controls
                 FlatStyle = FlatStyle.Flat
             };
 
+            _rbPostEdit = new RadioButton
+            {
+                Text = "Post-Edit",
+                Location = new Point(200, 2),
+                AutoSize = true,
+                Font = bodyFont,
+                ForeColor = labelColor,
+                FlatStyle = FlatStyle.Flat
+            };
+
+            _modePanel.Size = new Size(400, 24);
             _modePanel.Controls.Add(_rbTranslate);
             _modePanel.Controls.Add(_rbProofread);
+            _modePanel.Controls.Add(_rbPostEdit);
             Controls.Add(_modePanel);
             y += 30;
 
@@ -165,6 +185,33 @@ namespace Supervertaler.Trados.Controls
             Controls.Add(_lblScopeLabel);
             Controls.Add(_cmbScope);
             y += 28;
+
+            // ─── Post-Edit Level (hidden by default) ─────────────
+            _lblPostEditLevel = new Label
+            {
+                Text = "Level:",
+                Location = new Point(12, y + 3),
+                AutoSize = true,
+                Font = bodyFont,
+                ForeColor = labelColor,
+                Visible = false
+            };
+            _cmbPostEditLevel = new ComboBox
+            {
+                Location = new Point(100, y),
+                Width = 200,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = bodyFont,
+                Visible = false
+            };
+            _cmbPostEditLevel.Items.Add("Light \u2014 errors only");
+            _cmbPostEditLevel.Items.Add("Medium \u2014 errors + phrasing");
+            _cmbPostEditLevel.Items.Add("Heavy \u2014 full polish");
+            _cmbPostEditLevel.SelectedIndex = 1; // Medium by default
+            Controls.Add(_lblPostEditLevel);
+            Controls.Add(_cmbPostEditLevel);
+            // y NOT incremented — post-edit level shares row space with scope line when hidden;
+            // OnModeChanged will re-layout
 
             // ─── Prompt ──────────────────────────────────────────
             _lblPromptLabel = new Label
@@ -355,19 +402,24 @@ namespace Supervertaler.Trados.Controls
 
         private void OnModeChanged(object sender, EventArgs e)
         {
-            if (!_rbTranslate.Checked && !_rbProofread.Checked) return;
+            if (!_rbTranslate.Checked && !_rbProofread.Checked && !_rbPostEdit.Checked) return;
 
-            _currentMode = _rbTranslate.Checked ? BatchMode.Translate : BatchMode.Proofread;
+            _currentMode = _rbTranslate.Checked ? BatchMode.Translate
+                : _rbProofread.Checked ? BatchMode.Proofread
+                : BatchMode.PostEdit;
 
             // Update scope dropdown items
-            var prevScope = _cmbScope.SelectedIndex;
             if (_currentMode == BatchMode.Translate)
                 PopulateTranslateScopes();
             else
-                PopulateProofreadScopes();
+                PopulateProofreadScopes(); // Post-Edit uses same scopes as Proofread
 
             // Update action button text
             UpdateActionButtonText();
+
+            // Show/hide post-edit level (only in Post-Edit mode)
+            _lblPostEditLevel.Visible = _currentMode == BatchMode.PostEdit;
+            _cmbPostEditLevel.Visible = _currentMode == BatchMode.PostEdit;
 
             // Show/hide comments checkbox (only in Proofread mode)
             _chkAddComments.Visible = _currentMode == BatchMode.Proofread;
@@ -401,15 +453,21 @@ namespace Supervertaler.Trados.Controls
         {
             if (_isRunning)
             {
-                _btnTranslate.Text = _currentMode == BatchMode.Translate
-                    ? "\u25A0  Stop translating"
-                    : "\u25A0  Stop proofreading";
+                switch (_currentMode)
+                {
+                    case BatchMode.Translate: _btnTranslate.Text = "\u25A0  Stop translating"; break;
+                    case BatchMode.Proofread: _btnTranslate.Text = "\u25A0  Stop proofreading"; break;
+                    case BatchMode.PostEdit: _btnTranslate.Text = "\u25A0  Stop post-editing"; break;
+                }
             }
             else
             {
-                _btnTranslate.Text = _currentMode == BatchMode.Translate
-                    ? "\u25B6  Translate"
-                    : "\u25B6  Proofread";
+                switch (_currentMode)
+                {
+                    case BatchMode.Translate: _btnTranslate.Text = "\u25B6  Translate"; break;
+                    case BatchMode.Proofread: _btnTranslate.Text = "\u25B6  Proofread"; break;
+                    case BatchMode.PostEdit: _btnTranslate.Text = "\u25B6  Post-Edit"; break;
+                }
             }
         }
 
@@ -424,6 +482,10 @@ namespace Supervertaler.Trados.Controls
             else if (_currentMode == BatchMode.Proofread)
             {
                 ProofreadRequested?.Invoke(this, EventArgs.Empty);
+            }
+            else if (_currentMode == BatchMode.PostEdit)
+            {
+                PostEditRequested?.Invoke(this, EventArgs.Empty);
             }
             else
             {
@@ -523,6 +585,19 @@ namespace Supervertaler.Trados.Controls
         }
 
         /// <summary>
+        /// Returns the selected post-edit aggressiveness level.
+        /// </summary>
+        public PostEditLevel GetSelectedPostEditLevel()
+        {
+            switch (_cmbPostEditLevel?.SelectedIndex ?? 1)
+            {
+                case 0: return PostEditLevel.Light;
+                case 2: return PostEditLevel.Heavy;
+                default: return PostEditLevel.Medium;
+            }
+        }
+
+        /// <summary>
         /// Returns the selected proofread scope (for Proofread mode).
         /// </summary>
         public ProofreadScope GetSelectedProofreadScope()
@@ -600,6 +675,22 @@ namespace Supervertaler.Trados.Controls
         }
 
         /// <summary>
+        /// Reports post-editing completion with summary.
+        /// </summary>
+        public void ReportPostEditCompleted(int total, int changed, int unchanged, int failed,
+            TimeSpan elapsed, bool cancelled)
+        {
+            SetRunning(false);
+
+            var status = cancelled ? "Cancelled" : "Complete";
+            AppendLog(
+                $"\u2014 {status}: \u270E {changed} changed, \u2713 {unchanged} unchanged" +
+                (failed > 0 ? $", \u2717 {failed} failed" : "") +
+                $" ({elapsed.TotalSeconds:F1}s)",
+                false);
+        }
+
+        /// <summary>
         /// Toggles the UI between running and idle states.
         /// </summary>
         public void SetRunning(bool running)
@@ -610,6 +701,8 @@ namespace Supervertaler.Trados.Controls
             _cmbPrompt.Enabled = !running;
             _rbTranslate.Enabled = !running;
             _rbProofread.Enabled = !running;
+            _rbPostEdit.Enabled = !running;
+            if (_cmbPostEditLevel != null) _cmbPostEditLevel.Enabled = !running;
 
             if (!running)
             {

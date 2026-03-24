@@ -28,6 +28,7 @@ namespace Supervertaler.Trados.Models
         public TimeSpan Duration { get; set; }
     }
 
-    public enum BatchMode { Translate, Proofread }
+    public enum BatchMode { Translate, Proofread, PostEdit }
     public enum ProofreadScope { ConfirmedOnly, TranslatedAndConfirmed, AllSegments, Filtered, FilteredConfirmedOnly }
+    public enum PostEditLevel { Light, Medium, Heavy }
 }

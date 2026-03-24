@@ -57,6 +57,10 @@ namespace Supervertaler.Trados
         private CancellationTokenSource _proofreadCts;
         private ProofreadingReport _currentReport;
 
+        // Post-edit state
+        private BatchPostEditor _batchPostEditor;
+        private CancellationTokenSource _postEditCts;
+
         // Prompt library
         private PromptLibrary _promptLibrary;
 
@@ -125,6 +129,7 @@ namespace Supervertaler.Trados
             var batchControl = _control.Value.BatchTranslateControl;
             batchControl.TranslateRequested += OnBatchTranslateRequested;
             batchControl.ProofreadRequested += OnProofreadRequested;
+            batchControl.PostEditRequested += OnPostEditRequested;
             batchControl.StopRequested += OnBatchStopRequested;
             batchControl.ScopeChanged += OnBatchScopeChanged;
             batchControl.OpenAiSettingsRequested += OnSettingsRequested;
@@ -831,7 +836,9 @@ namespace Supervertaler.Trados
                 var prompts = _promptLibrary?.GetAllPrompts();
                 var selectedPath = _settings?.AiSettings?.SelectedPromptPath ?? "";
                 var mode = _control.Value.BatchTranslateControl.CurrentMode;
-                var categoryFilter = mode == BatchMode.Proofread ? "Proofread" : "Translate";
+                var categoryFilter = mode == BatchMode.Proofread ? "Proofread"
+                    : mode == BatchMode.PostEdit ? "Translate"  // PostEdit uses Translate prompts
+                    : "Translate";
                 _control.Value.BatchTranslateControl.SetPrompts(prompts, selectedPath, categoryFilter);
             });
         }
@@ -986,6 +993,7 @@ namespace Supervertaler.Trados
         {
             _batchCts?.Cancel();
             _proofreadCts?.Cancel();
+            _postEditCts?.Cancel();
             SafeInvoke(() => _control.Value.BatchTranslateControl.AppendLog("Cancellation requested..."));
         }
 
@@ -1292,6 +1300,238 @@ namespace Supervertaler.Trados
 
             _proofreadCts?.Dispose();
             _proofreadCts = null;
+        }
+
+        // ─── Post-Edit ───────────────────────────────────────────
+
+        private void OnPostEditRequested(object sender, EventArgs e)
+        {
+            SafeInvoke(() =>
+            {
+                var batchControl = _control.Value.BatchTranslateControl;
+
+                if (_activeDocument == null)
+                {
+                    batchControl.AppendLog("No document open.", true);
+                    return;
+                }
+
+                var aiSettings = _settings.AiSettings;
+                if (aiSettings == null)
+                {
+                    batchControl.AppendLog("AI settings not configured. Open Settings to configure a provider.", true);
+                    return;
+                }
+
+                // Resolve API key
+                var provider = aiSettings.SelectedProvider ?? LlmModels.ProviderOpenAi;
+                string apiKey;
+                string baseUrl = null;
+                string model = aiSettings.GetSelectedModel();
+
+                if (provider == LlmModels.ProviderOllama)
+                {
+                    apiKey = "ollama";
+                    baseUrl = aiSettings.OllamaEndpoint ?? "http://localhost:11434";
+                }
+                else if (provider == LlmModels.ProviderCustomOpenAi)
+                {
+                    var profile = aiSettings.GetActiveCustomProfile();
+                    if (profile == null)
+                    {
+                        batchControl.AppendLog("No custom OpenAI profile configured.", true);
+                        return;
+                    }
+                    apiKey = profile.ApiKey;
+                    baseUrl = profile.Endpoint;
+                    model = profile.Model;
+                }
+                else
+                {
+                    apiKey = LlmClient.ResolveApiKey(provider, aiSettings.ApiKeys);
+                }
+
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    batchControl.AppendLog(
+                        $"No API key configured for {provider}. Open Settings \u2192 AI Settings to add one.", true);
+                    return;
+                }
+
+                var sourceLang = GetDocumentSourceLanguage();
+                var targetLang = GetDocumentTargetLanguage();
+
+                if (string.IsNullOrEmpty(sourceLang) || string.IsNullOrEmpty(targetLang))
+                {
+                    batchControl.AppendLog("Cannot determine source/target language from document.", true);
+                    return;
+                }
+
+                // Collect segments (reuse proofread scope — targets segments with existing targets)
+                var proofScope = batchControl.GetSelectedProofreadScope();
+                var segments = CollectProofreadSegments(proofScope);
+
+                if (segments.Count == 0)
+                {
+                    batchControl.AppendLog("No segments to post-edit.", true);
+                    return;
+                }
+
+                // Get termbase terms
+                var allTerms = TermLensEditorViewPart.GetCurrentTermbaseTerms();
+                var batchDisabledIds = _settings?.AiSettings?.DisabledAiTermbaseIds ?? new List<long>();
+                var termbaseTerms = batchDisabledIds.Count > 0
+                    ? allTerms.Where(t => !batchDisabledIds.Contains(t.TermbaseId)).ToList()
+                    : allTerms;
+
+                // Resolve custom prompt
+                var selectedPromptPath = batchControl.GetSelectedPromptPath();
+                aiSettings.SelectedPromptPath = selectedPromptPath;
+                _settings.Save();
+
+                var customPromptContent = ResolveCustomPromptContent(sourceLang, targetLang);
+                var level = batchControl.GetSelectedPostEditLevel();
+
+                int batchSize = 10; // smaller batches for post-edit (source+target = double tokens)
+
+                // Start post-editing
+                batchControl.SetRunning(true);
+                batchControl.AppendLog(
+                    $"Starting post-editing: {segments.Count} segments, level={level}, " +
+                    $"provider={provider}, model={model}, batch size={batchSize}");
+
+                _postEditCts = new CancellationTokenSource();
+                _batchPostEditor = new BatchPostEditor();
+
+                _batchPostEditor.Progress += OnBatchProgress;
+                _batchPostEditor.SegmentPostEdited += OnPostEditSegmentResult;
+                _batchPostEditor.Completed += OnPostEditCompleted;
+
+                var ct = _postEditCts.Token;
+
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _batchPostEditor.PostEditAsync(
+                            segments, sourceLang, targetLang, level,
+                            aiSettings, termbaseTerms, batchSize, ct,
+                            customPromptContent);
+                    }
+                    catch (Exception ex)
+                    {
+                        SafeInvoke(() =>
+                        {
+                            batchControl.AppendLog($"Unexpected error: {ex.Message}", true);
+                            batchControl.SetRunning(false);
+                        });
+                    }
+                });
+            });
+        }
+
+        private void OnPostEditSegmentResult(object sender, PostEditSegmentResultEventArgs e)
+        {
+            SafeInvoke(() =>
+            {
+                var batchControl = _control.Value.BatchTranslateControl;
+
+                // Skip unchanged segments
+                if (!e.WasChanged)
+                {
+                    batchControl.AppendLog($"\u2713 Seg {e.SegmentIndex + 1}: No change needed");
+                    return;
+                }
+
+                try
+                {
+                    if (e.SegmentPairRef == null || _activeDocument == null) return;
+
+                    // Always use ProcessSegmentPair for post-edit writes.
+                    // Selection.Target.Replace() duplicates text when Track Changes is on.
+                    var segPair = e.SegmentPairRef as Sdl.FileTypeSupport.Framework.BilingualApi.ISegmentPair;
+
+                    // If stored as string[] (paragraph+segment IDs), we need to find the pair
+                    if (segPair == null)
+                    {
+                        var ids = e.SegmentPairRef as string[];
+                        if (ids != null && ids.Length >= 2)
+                        {
+                            // Navigate to the segment to get the pair, then use ProcessSegmentPair
+                            _activeDocument.SetActiveSegmentPair(ids[0], ids[1], true);
+                            segPair = _activeDocument.ActiveSegmentPair;
+                        }
+                    }
+
+                    if (segPair == null) return;
+
+                    _activeDocument.ProcessSegmentPair(segPair, "Supervertaler",
+                        (sp, cancel) =>
+                        {
+                            // Tagged segments: try tag reconstruction first
+                            if (e.HasTags && e.TagMap != null && e.TagMap.Count > 0)
+                            {
+                                bool reconstructed = SegmentTagHandler.ReconstructTarget(
+                                    sp.Target, sp.Source, e.CorrectedText, e.TagMap);
+
+                                if (!reconstructed)
+                                {
+                                    var plainText = SegmentTagHandler.StripTagPlaceholders(e.CorrectedText);
+                                    var textTemplate = SegmentTagHandler.FindFirstText(sp.Source);
+                                    if (textTemplate != null && !string.IsNullOrEmpty(plainText))
+                                    {
+                                        sp.Target.Clear();
+                                        var textClone = (Sdl.FileTypeSupport.Framework.BilingualApi.IText)textTemplate.Clone();
+                                        textClone.Properties.Text = plainText;
+                                        sp.Target.Add(textClone);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Non-tagged: clean replacement
+                                var textTemplate = SegmentTagHandler.FindFirstText(sp.Source);
+                                if (textTemplate != null && !string.IsNullOrEmpty(e.CorrectedText))
+                                {
+                                    sp.Target.Clear();
+                                    var textClone = (Sdl.FileTypeSupport.Framework.BilingualApi.IText)textTemplate.Clone();
+                                    textClone.Properties.Text = e.CorrectedText;
+                                    sp.Target.Add(textClone);
+                                }
+                            }
+                        });
+
+                    batchControl.AppendLog($"\u270E Seg {e.SegmentIndex + 1}: Updated");
+                }
+                catch (Exception ex)
+                {
+                    batchControl.AppendLog($"\u2717 Seg {e.SegmentIndex + 1}: Write failed \u2014 {ex.Message}", true);
+                }
+            });
+        }
+
+        private void OnPostEditCompleted(object sender, PostEditCompletedEventArgs e)
+        {
+            SafeInvoke(() =>
+            {
+                _control.Value.BatchTranslateControl.ReportPostEditCompleted(
+                    e.TotalProcessed, e.Changed, e.Unchanged, e.Failed,
+                    e.TotalTime, e.WasCancelled);
+
+                UpdateBatchSegmentCounts();
+            });
+
+            // Clean up
+            if (_batchPostEditor != null)
+            {
+                _batchPostEditor.Progress -= OnBatchProgress;
+                _batchPostEditor.SegmentPostEdited -= OnPostEditSegmentResult;
+                _batchPostEditor.Completed -= OnPostEditCompleted;
+                _batchPostEditor = null;
+            }
+
+            _postEditCts?.Dispose();
+            _postEditCts = null;
         }
 
         private void OnNavigateToSegment(object sender, NavigateToSegmentEventArgs e)

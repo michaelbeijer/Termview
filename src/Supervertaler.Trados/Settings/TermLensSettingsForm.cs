@@ -61,7 +61,7 @@ namespace Supervertaler.Trados.Settings
         private List<MultiTermTermbaseInfo> _multiTermInfos = new List<MultiTermTermbaseInfo>();
 
         public TermLensSettingsForm(TermLensSettings settings,
-            Core.PromptLibrary promptLibrary = null, int defaultTab = 0)
+            Core.PromptLibrary promptLibrary = null, int defaultTab = 0, string defaultPromptFolder = null)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _promptLibrary = promptLibrary ?? new Core.PromptLibrary();
@@ -71,6 +71,10 @@ namespace Supervertaler.Trados.Settings
             // Select the requested default tab
             if (defaultTab >= 0 && defaultTab < _tabControl.TabPages.Count)
                 _tabControl.SelectedIndex = defaultTab;
+
+            // Pre-select a folder in the Prompts tab if requested
+            if (!string.IsNullOrEmpty(defaultPromptFolder) && _promptManagerPanel != null)
+                _promptManagerPanel.SelectFolder(defaultPromptFolder);
 
             // Restore persisted form size (capped to reasonable bounds)
             if (_settings.SettingsFormWidth > 0 && _settings.SettingsFormHeight > 0)
