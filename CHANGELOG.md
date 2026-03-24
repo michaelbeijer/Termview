@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.18.8] — 2026-03-24
+
+### Fixed
+- **In-plugin purchase links now use live checkout** — the "Buy" links in Settings → License were still pointing to test mode URLs
+
+---
+
 ## [4.18.7] — 2026-03-24
 
 ### Changed
