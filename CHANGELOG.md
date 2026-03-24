@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.18.10] — 2026-03-24
+
+### Added
+- **Unified prompt library schema** — prompts now use a consistent YAML frontmatter format (`category`, `app`, `built_in`) shared between Supervertaler Workbench and Supervertaler for Trados
+- **App-specific prompt filtering** — prompts tagged `app: "workbench"` are hidden in Trados; prompts tagged `app: "trados"` are hidden in Workbench; `app: "both"` (default) shows everywhere
+- **App dropdown in prompt editor** — new "App" field lets you choose whether a prompt is for Both, Trados only, or Workbench only
+- **Variable insertion menu reorganised** — Ctrl+, now groups variables into Common and Trados-specific sections
+- **MultiTerm diagnostic logging** — loading failures are now logged to `%LocalAppData%\Supervertaler.Trados\multiterm_debug.log` instead of being silently swallowed
+
+### Changed
+- **Prompt YAML keys standardised** — `domain` → `category`, `sv_quickmenu`/`quick_run` → `quickmenu`, `quicklauncher_label` → `quickmenu_label`; legacy keys are still accepted for backward compatibility
+- **Prompt library cleaned up** — removed duplicate folders and files, fixed malformed YAML frontmatter, standardised variable names (`{{SOURCE_TEXT}}` → `{{SOURCE_SEGMENT}}`)
+
+### Removed
+- **Example project removed** — the bundled example project contained a client reference and has been removed from the repo, all releases, and the help system
+
+---
+
 ## [4.18.9] — 2026-03-24
 
 ### Added
