@@ -245,7 +245,12 @@ namespace Supervertaler.Trados
 
                 _multiTermConfigs = MultiTermProjectDetector.DetectTermbases(_activeDocument);
 
-                if (_multiTermConfigs.Count == 0) return;
+                if (_multiTermConfigs.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("[TermLens] No MultiTerm termbases detected in project");
+                    return;
+                }
+                System.Diagnostics.Debug.WriteLine($"[TermLens] Detected {_multiTermConfigs.Count} MultiTerm termbase(s)");
 
                 // Filter out disabled MultiTerm termbases
                 var disabledMtIds = _settings.DisabledMultiTermIds ?? new List<long>();
@@ -302,8 +307,9 @@ namespace Supervertaler.Trados
                             }
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        System.Diagnostics.Debug.WriteLine($"[TermLens] Failed to load MultiTerm '{config.TermbaseName}': {ex.Message}");
                         failedConfigs.Add(config);
                         infos.Add(new MultiTermTermbaseInfo
                         {
@@ -323,12 +329,25 @@ namespace Supervertaler.Trados
 
                 _multiTermInfos = infos;
 
+                System.Diagnostics.Debug.WriteLine($"[TermLens] MultiTerm merged index: {mergedIndex.Count} keys, {infos.Count} termbases, {failedConfigs.Count} failed");
                 if (mergedIndex.Count > 0)
                     SafeInvoke(() => _control.Value.MergeMultiTermEntries(mergedIndex, infos));
+                else if (failedConfigs.Count > 0)
+                    System.Diagnostics.Debug.WriteLine("[TermLens] All MultiTerm termbases failed direct load — relying on fallback providers");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Silently handle — MultiTerm integration should never crash the plugin
+                System.Diagnostics.Debug.WriteLine($"[TermLens] MultiTerm loading failed: {ex}");
+                try
+                {
+                    var logDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "Supervertaler.Trados");
+                    Directory.CreateDirectory(logDir);
+                    File.AppendAllText(Path.Combine(logDir, "multiterm_debug.log"),
+                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] LoadMultiTermTermbases failed: {ex}\n\n");
+                }
+                catch { /* ignore log write errors */ }
             }
         }
 

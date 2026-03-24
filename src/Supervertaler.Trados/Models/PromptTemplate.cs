@@ -50,6 +50,13 @@ namespace Supervertaler.Trados.Models
         public string QuickLauncherLabel { get; set; } = "";
 
         /// <summary>
+        /// Target application for this prompt (from YAML 'app:' field).
+        /// "workbench" = Supervertaler Workbench only, "trados" = Trados plugin only,
+        /// "both" = shared between both (default).
+        /// </summary>
+        public string App { get; set; } = "both";
+
+        /// <summary>
         /// Sort order within a folder (from YAML 'sort_order:' field).
         /// Lower values appear first. Default 100 for unset (sorts after explicit values).
         /// </summary>

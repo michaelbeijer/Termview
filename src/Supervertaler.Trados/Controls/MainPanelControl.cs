@@ -98,8 +98,6 @@ namespace Supervertaler.Trados.Controls
                 HelpSystem.OpenHelp(HelpSystem.Topics.TermLensPanel));
             menu.Items.Add("MultiTerm Help", null, (s, ev) =>
                 HelpSystem.OpenHelp(HelpSystem.Topics.MultiTermSupport));
-            menu.Items.Add("Example Project", null, (s, ev) =>
-                HelpSystem.OpenHelp(HelpSystem.Topics.ExampleProject));
             menu.Items.Add("-");  // separator
             menu.Items.Add("About Supervertaler for Trados", null, (s, ev) =>
             {

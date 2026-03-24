@@ -226,6 +226,9 @@ namespace Supervertaler.Trados.Core
                 sb.AppendLine("description: \"" + EscapeYamlString(prompt.Description) + "\"");
             if (!string.IsNullOrEmpty(prompt.Domain))
                 sb.AppendLine("category: \"" + EscapeYamlString(prompt.Domain) + "\"");
+            if (!string.IsNullOrEmpty(prompt.App) &&
+                !prompt.App.Equals("both", StringComparison.OrdinalIgnoreCase))
+                sb.AppendLine("app: \"" + EscapeYamlString(prompt.App) + "\"");
             if (prompt.IsBuiltIn)
                 sb.AppendLine("built_in: true");
             if (prompt.SortOrder != 100)
@@ -398,7 +401,7 @@ namespace Supervertaler.Trados.Core
                     try
                     {
                         var prompt = ParsePromptFile(file, rootDir);
-                        if (prompt != null)
+                        if (prompt != null && !IsWorkbenchOnly(prompt))
                         {
                             prompt.IsReadOnly = isReadOnly;
                             _cache.Add(prompt);
@@ -417,7 +420,7 @@ namespace Supervertaler.Trados.Core
                     try
                     {
                         var prompt = ParsePromptFile(file, rootDir);
-                        if (prompt != null && !seenNames.Contains(prompt.Name))
+                        if (prompt != null && !seenNames.Contains(prompt.Name) && !IsWorkbenchOnly(prompt))
                         {
                             prompt.IsReadOnly = isReadOnly;
                             _cache.Add(prompt);
@@ -500,6 +503,15 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
+        /// Returns true if the prompt is targeted exclusively at Supervertaler Workbench
+        /// and should not appear in the Trados plugin.
+        /// </summary>
+        private static bool IsWorkbenchOnly(PromptTemplate prompt)
+        {
+            return string.Equals(prompt.App, "workbench", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Applies canonical normalisation to prompt.Domain and sets IsQuickLauncher.
         /// Called after both YAML parsing and the folder-name fallback so the logic
         /// is consistent regardless of how the domain was determined.
@@ -557,8 +569,18 @@ namespace Supervertaler.Trados.Core
                         // Full normalisation (legacy names → QuickLauncher, IsQuickLauncher flag)
                         // runs after all YAML is parsed, in NormaliseDomain().
                         break;
+                    case "app":
+                        // Unified schema: "workbench", "trados", or "both"
+                        prompt.App = value.ToLowerInvariant();
+                        break;
                     case "built_in":
                         prompt.IsBuiltIn = value.Equals("true", StringComparison.OrdinalIgnoreCase);
+                        break;
+                    case "quickmenu":       // unified schema
+                    case "sv_quickmenu":    // backward compatibility (Workbench legacy)
+                    case "quick_run":       // backward compatibility (Workbench legacy)
+                        if (value.Equals("true", StringComparison.OrdinalIgnoreCase))
+                            prompt.IsQuickLauncher = true;
                         break;
                     case "quicklauncher_label":
                     case "quickmenu_label": // backward compatibility

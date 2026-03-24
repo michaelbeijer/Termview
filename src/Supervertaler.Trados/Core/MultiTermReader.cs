@@ -156,9 +156,13 @@ namespace Supervertaler.Trados.Core
             try
             {
                 // Verify that the source and target index tables exist
-                if (!TableExists($"I_{sourceIndexName}") || !TableExists($"I_{targetIndexName}"))
+                var srcExists = TableExists($"I_{sourceIndexName}");
+                var tgtExists = TableExists($"I_{targetIndexName}");
+                System.Diagnostics.Debug.WriteLine($"[MultiTermReader] Table check: I_{sourceIndexName}={srcExists}, I_{targetIndexName}={tgtExists}");
+                if (!srcExists || !tgtExists)
                 {
                     LastError = $"Index table not found for '{sourceIndexName}' or '{targetIndexName}'";
+                    System.Diagnostics.Debug.WriteLine($"[MultiTermReader] {LastError}");
                     return index;
                 }
 
@@ -186,6 +190,7 @@ namespace Supervertaler.Trados.Core
                     }
                 }
 
+                System.Diagnostics.Debug.WriteLine($"[MultiTermReader] Loaded {sourceTermsByConcept.Count} source concepts from I_{sourceIndexName}");
                 if (sourceTermsByConcept.Count == 0) return index;
 
                 // Step 2: Load all target terms grouped by conceptId

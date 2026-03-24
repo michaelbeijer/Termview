@@ -15,6 +15,7 @@ namespace Supervertaler.Trados.Controls
         private TextBox _txtName;
         private TextBox _txtDescription;
         private TextBox _txtDomain;
+        private ComboBox _cboApp;
         private TextBox _txtContent;
         private Button _btnOK;
         private Button _btnCancel;
@@ -103,8 +104,26 @@ namespace Supervertaler.Trados.Controls
                 Width = 200,
                 Anchor = AnchorStyles.Top | AnchorStyles.Left
             };
+            var lblApp = new Label
+            {
+                Text = "App:",
+                Location = new Point(316, y + 3),
+                AutoSize = true,
+                ForeColor = labelColor
+            };
+            _cboApp = new ComboBox
+            {
+                Location = new Point(350, y),
+                Width = 130,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
+            };
+            _cboApp.Items.AddRange(new object[] { "Both", "Trados only", "Workbench only" });
+            _cboApp.SelectedIndex = 0;
             Controls.Add(lblDomain);
             Controls.Add(_txtDomain);
+            Controls.Add(lblApp);
+            Controls.Add(_cboApp);
             y += 34;
 
             // ─── Content label + variable hint ────────────
@@ -159,18 +178,20 @@ namespace Supervertaler.Trados.Controls
                 item.Click += (s, e) => InsertVariable(variable);
                 _varMenu.Items.Add(item);
             }
+
+            // Common variables (shared with Workbench)
             AddVar("{{SOURCE_LANGUAGE}}", "Source language name (e.g. \"Dutch\")");
             AddVar("{{TARGET_LANGUAGE}}", "Target language name (e.g. \"English\")");
-            _varMenu.Items.Add(new ToolStripSeparator());
             AddVar("{{SOURCE_SEGMENT}}", "Source text of the active segment");
             AddVar("{{TARGET_SEGMENT}}", "Target text of the active segment");
             AddVar("{{SELECTION}}", "Currently selected text in the editor");
             _varMenu.Items.Add(new ToolStripSeparator());
+
+            // Trados-specific variables
             AddVar("{{PROJECT_NAME}}", "Name of the active Trados project");
             AddVar("{{DOCUMENT_NAME}}", "Name of the active file");
-            AddVar("{{SURROUNDING_SEGMENTS}}", "Context segments before and after the active segment");
+            AddVar("{{SURROUNDING_SEGMENTS}}", "Context segments around the active segment");
             AddVar("{{PROJECT}}", "All source segments in the document");
-            _varMenu.Items.Add(new ToolStripSeparator());
             AddVar("{{TM_MATCHES}}", "Translation memory fuzzy matches (\u226570%)");
 
             // ─── OK / Cancel ──────────────────────────────
@@ -208,11 +229,21 @@ namespace Supervertaler.Trados.Controls
             _txtDomain.Text = _prompt.Domain ?? "";
             _txtContent.Text = _prompt.Content ?? "";
 
+            // Map App value to ComboBox selection
+            var app = (_prompt.App ?? "both").ToLowerInvariant();
+            if (app == "trados")
+                _cboApp.SelectedIndex = 1;
+            else if (app == "workbench")
+                _cboApp.SelectedIndex = 2;
+            else
+                _cboApp.SelectedIndex = 0; // "Both"
+
             if (_prompt.IsReadOnly)
             {
                 _txtName.ReadOnly = true;
                 _txtDescription.ReadOnly = true;
                 _txtDomain.ReadOnly = true;
+                _cboApp.Enabled = false;
                 _txtContent.ReadOnly = true;
                 _btnOK.Enabled = false;
                 Text += " (read-only)";
@@ -234,6 +265,14 @@ namespace Supervertaler.Trados.Controls
             _prompt.Description = _txtDescription.Text.Trim();
             _prompt.Domain = _txtDomain.Text.Trim();
             _prompt.Content = _txtContent.Text;
+
+            // Map ComboBox selection back to App value
+            switch (_cboApp.SelectedIndex)
+            {
+                case 1: _prompt.App = "trados"; break;
+                case 2: _prompt.App = "workbench"; break;
+                default: _prompt.App = "both"; break;
+            }
         }
 
         private void ShowVarMenu()
