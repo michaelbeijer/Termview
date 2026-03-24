@@ -44,6 +44,7 @@
 
 ## Reference
 
+* [User Data Folder](data-folder.md)
 * [Keyboard Shortcuts](keyboard-shortcuts.md)
 * [Troubleshooting](troubleshooting.md)
 * [Support & Community](support.md)
