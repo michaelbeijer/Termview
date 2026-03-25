@@ -6,8 +6,10 @@ You are viewing help for **Supervertaler for Trados** — the Trados Studio plug
 
 ### Download
 
-1. Go to the [GitHub Releases](https://github.com/Supervertaler/Supervertaler-for-Trados/releases) page
-2. Download the latest `Supervertaler for Trados.sdlplugin` file
+You can install Supervertaler for Trados in two ways:
+
+* **RWS App Store** — Install directly from the [RWS App Store](https://appstore.rws.com/plugin/432)
+* **GitHub Releases** — Download the latest `Supervertaler for Trados.sdlplugin` file from the [GitHub Releases](https://github.com/Supervertaler/Supervertaler-for-Trados/releases) page
 
 ### Install
 
