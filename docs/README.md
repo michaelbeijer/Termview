@@ -6,6 +6,14 @@ Supervertaler for Trados is a plugin for **Trados Studio 2024+** that brings Sup
 
 <figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
 
+## Getting Started Screencast
+
+New to Supervertaler? Watch the [Getting Started screencast](https://www.youtube.com/watch?v=bOIwMAoP7xc) (16 min) for a walkthrough of all the basics – TermLens, prompt generation, AI translation, the Chat window, and more.
+
+{% embed url="https://www.youtube.com/watch?v=bOIwMAoP7xc" %}
+Supervertaler for Trados – Getting Started (16 min)
+{% endembed %}
+
 ## Key Features
 
 ### TermLens (Inline Terminology)

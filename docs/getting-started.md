@@ -4,6 +4,10 @@ You are viewing help for **Supervertaler for Trados** — the Trados Studio plug
 
 This page walks you through the first-time setup so you can start using TermLens terminology and AI translation inside Trados Studio.
 
+{% hint style="success" %}
+**Prefer to watch?** The [Getting Started screencast](https://www.youtube.com/watch?v=bOIwMAoP7xc) (16 min) covers everything on this page and more – TermLens, prompt generation, AI translation, the Chat window, and purchasing.
+{% endhint %}
+
 ## First-Time Setup
 
 ### 1. Open Settings
