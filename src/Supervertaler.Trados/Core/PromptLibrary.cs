@@ -283,6 +283,9 @@ namespace Supervertaler.Trados.Core
         {
             Directory.CreateDirectory(PromptsDir);
 
+            // One-time migration: rename all .svprompt files to .md
+            MigrateSvpromptToMd();
+
             // Clean up domain-specific translate prompts removed in v4.13.0
             CleanUpRetiredPrompts();
 
@@ -370,6 +373,32 @@ namespace Supervertaler.Trados.Core
                     catch { /* ignore — file locked or permissions */ }
                 }
             }
+        }
+
+        /// <summary>
+        /// One-time migration: renames all .svprompt files to .md in the prompt library.
+        /// Skips files where a .md version already exists (to avoid overwriting).
+        /// </summary>
+        private void MigrateSvpromptToMd()
+        {
+            try
+            {
+                if (!Directory.Exists(PromptsDir)) return;
+
+                foreach (var svpromptFile in Directory.GetFiles(PromptsDir, "*.svprompt", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        var mdFile = Path.ChangeExtension(svpromptFile, ".md");
+                        if (!File.Exists(mdFile))
+                            File.Move(svpromptFile, mdFile);
+                        else
+                            File.Delete(svpromptFile); // .md version already exists
+                    }
+                    catch { /* ignore — file locked or permissions */ }
+                }
+            }
+            catch { /* ignore — directory access failure */ }
         }
 
         /// <summary>
