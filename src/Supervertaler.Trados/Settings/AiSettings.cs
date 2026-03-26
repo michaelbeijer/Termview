@@ -87,7 +87,7 @@ namespace Supervertaler.Trados.Settings
         /// Documents larger than this are truncated (first 80% + last 20%).
         /// </summary>
         [DataMember(Name = "documentContextMaxSegments")]
-        public int DocumentContextMaxSegments { get; set; } = 500;
+        public int DocumentContextMaxSegments { get; set; } = 20;
 
         /// <summary>
         /// Number of segments before and after the active segment to include as context
