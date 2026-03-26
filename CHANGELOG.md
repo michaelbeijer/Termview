@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.18.14] — 2026-03-26
+
+### Added
+- **Generate project brief** – new built-in QuickLauncher prompt that produces a comprehensive Markdown summary of the current project (subject matter, terminology, named entities, translation challenges) for pasting into other AI tools
+- **Restore button tooltip** – the Restore button in the Prompt Manager now shows "Restore all built-in prompts to their defaults"
+
+### Changed
+- **Prompts now saved as `.md`** – prompt files use standard Markdown (`.md`) extension instead of `.svprompt`; existing `.svprompt` files are auto-migrated on startup; a new `type: prompt` YAML field identifies prompt files
+- **QuickLauncher heading opens Prompts tab** – clicking the "Supervertaler QuickLauncher" heading in the Ctrl+Q menu now correctly opens Settings → Prompts instead of AI Settings
+- **App label spacing** – added spacing between the "App:" label and dropdown in the prompt editor dialog
+
+---
+
 ## [4.18.12] — 2026-03-25
 
 ### Fixed
