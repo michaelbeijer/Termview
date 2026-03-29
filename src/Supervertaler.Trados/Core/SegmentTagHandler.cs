@@ -308,11 +308,15 @@ namespace Supervertaler.Trados.Core
                     return false;
                 }
 
+                // Check whether the source stores line breaks as literal \n in IText nodes
+                // (e.g. Visio, Excel) rather than as separate IPlaceholderTag elements (DOCX).
+                bool sourceHasTextNewlines = SourceTextContainsNewlines(sourceSegment);
+
                 // Clear the target segment
                 targetSegment.Clear();
 
                 // Add parsed elements to the target
-                AddElementsToContainer(targetSegment, elements, tagMap, textTemplate);
+                AddElementsToContainer(targetSegment, elements, tagMap, textTemplate, sourceHasTextNewlines);
 
                 return true;
             }
@@ -473,7 +477,8 @@ namespace Supervertaler.Trados.Core
             IAbstractMarkupDataContainer container,
             List<ParsedElement> elements,
             Dictionary<int, TagInfo> tagMap,
-            IText textTemplate)
+            IText textTemplate,
+            bool sourceHasTextNewlines = false)
         {
             foreach (var element in elements)
             {
@@ -484,7 +489,7 @@ namespace Supervertaler.Trados.Core
                         // If the LLM emitted a literal newline instead of a <tN/> placeholder,
                         // split it and re-insert the appropriate line-break tag from the source.
                         if (pt.Text.IndexOf('\n') >= 0 || pt.Text.IndexOf('\r') >= 0)
-                            InsertTextWithLineBreaks(container, pt.Text, tagMap, textTemplate);
+                            InsertTextWithLineBreaks(container, pt.Text, tagMap, textTemplate, sourceHasTextNewlines);
                         else
                         {
                             var textClone = (IText)textTemplate.Clone();
@@ -517,7 +522,7 @@ namespace Supervertaler.Trados.Core
                         {
                             tagContainer.Clear();
                             // Add child elements inside the cloned tag pair
-                            AddElementsToContainer(tagContainer, ot.Children, tagMap, textTemplate);
+                            AddElementsToContainer(tagContainer, ot.Children, tagMap, textTemplate, sourceHasTextNewlines);
                         }
 
                         container.Add(clone);
@@ -525,7 +530,7 @@ namespace Supervertaler.Trados.Core
                     else
                     {
                         // Unknown tag number — add children as plain content (skip the tag wrapper)
-                        AddElementsToContainer(container, ot.Children, tagMap, textTemplate);
+                        AddElementsToContainer(container, ot.Children, tagMap, textTemplate, sourceHasTextNewlines);
                     }
                 }
             }
@@ -543,7 +548,8 @@ namespace Supervertaler.Trados.Core
             IAbstractMarkupDataContainer container,
             string text,
             Dictionary<int, TagInfo> tagMap,
-            IText textTemplate)
+            IText textTemplate,
+            bool sourceHasTextNewlines = false)
         {
             // Find the first line-break tag in the source tag map
             TagInfo lineBreakInfo = null;
@@ -569,19 +575,21 @@ namespace Supervertaler.Trados.Core
                     }
                 }
 
-                if (!hasAnyStandalone)
+                if (!hasAnyStandalone || sourceHasTextNewlines)
                 {
-                    // No standalone tags exist in the source segment — the newline is
-                    // already embedded in IText content (e.g. Excel cell, plain text).
-                    // Preserve the original text with \n intact so the file type handler
-                    // can write it back correctly to the target format.
+                    // Either no standalone tags exist, or the source IText nodes already
+                    // contain literal \n characters (e.g. Visio, Excel, plain text).
+                    // In both cases, the file format stores line breaks as text content,
+                    // not as separate placeholder tags. Preserve the \n so the file type
+                    // handler can write it back correctly to the target format.
                     var textClone = (IText)textTemplate.Clone();
                     textClone.Properties.Text = text.Replace("\r\n", "\n").Replace("\r", "\n");
                     container.Add(textClone);
                     return;
                 }
 
-                // Standalone tags exist but none were identified as line breaks.
+                // Standalone tags exist but none were identified as line breaks,
+                // and the source text didn't have embedded newlines either.
                 // Emit a diagnostic so we can tune detection, and drop the bare \n
                 // (better to lose the line break than write a \n into IText for a DOCX
                 // segment, which Trados would convert to a paragraph break).
@@ -662,6 +670,27 @@ namespace Supervertaler.Trados.Core
         }
 
         // ─── Helpers ─────────────────────────────────────────
+
+        /// <summary>
+        /// Returns true if any IText node in the source segment contains a literal
+        /// newline character (\n or \r). This indicates the file format (e.g. Visio,
+        /// Excel) stores line breaks as text content rather than as separate
+        /// IPlaceholderTag elements (as DOCX does with w:br).
+        /// </summary>
+        private static bool SourceTextContainsNewlines(ISegment segment)
+        {
+            if (segment == null) return false;
+            foreach (var item in segment.AllSubItems)
+            {
+                if (item is IText textItem)
+                {
+                    var t = textItem.Properties.Text;
+                    if (t != null && (t.IndexOf('\n') >= 0 || t.IndexOf('\r') >= 0))
+                        return true;
+                }
+            }
+            return false;
+        }
 
         /// <summary>
         /// Finds the first IText node in a segment (depth-first).

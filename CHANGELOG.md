@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.18.21] — 2026-03-29
+
+### Fixed
+- **Line breaks preserved in Visio and similar formats** – when the source segment stores line breaks as literal `\n` in text content (Visio `.vsdx`, Excel) rather than as separate placeholder tags (DOCX `w:br`), the newlines are now correctly preserved in the translated target instead of being silently dropped
+
+---
+
 ## [4.18.20] — 2026-03-28
 
 ### Fixed
