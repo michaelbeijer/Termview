@@ -228,6 +228,7 @@ QuickLauncher prompts live in the shared `prompt_library` folder used by both Su
 
 ## See Also
 
+- [Text Transforms](text-transforms.md)
 - [Prompts](settings/prompts.md)
 - [Supervertaler Assistant](ai-assistant.md)
 - [Keyboard Shortcuts](keyboard-shortcuts.md)

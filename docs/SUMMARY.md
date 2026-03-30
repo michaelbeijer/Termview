@@ -17,6 +17,7 @@
 * [MultiTerm Support](multiterm-support.md)
 * [Supervertaler Assistant](ai-assistant.md)
 * [QuickLauncher](quicklauncher.md)
+* [Text Transforms](text-transforms.md)
 * [Batch Operations](batch-operations.md)
   * [Batch Translate](batch-translate.md)
   * [AI Proofreader](ai-proofreader.md)

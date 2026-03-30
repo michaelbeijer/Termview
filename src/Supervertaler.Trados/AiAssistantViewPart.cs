@@ -1689,6 +1689,122 @@ namespace Supervertaler.Trados
             });
         }
 
+        // ─── Text transforms (local find/replace, no AI call) ─────────
+
+        /// <summary>
+        /// Applies a text transform to the active target segment.
+        /// Runs the find/replace rules from the prompt's Replacements list
+        /// directly on the target text without calling an AI provider.
+        /// Uses ProcessContentWithDocument to commit changes through the
+        /// Trados document model (same mechanism as batch translate).
+        /// Returns a message describing what happened (for status display).
+        /// </summary>
+        public static string RunTextTransform(Models.PromptTemplate transform)
+        {
+            if (transform == null || transform.Replacements.Count == 0)
+                return "No replacements defined.";
+
+            var instance = _currentInstance;
+            if (instance == null)
+                return "AI Assistant not initialised.";
+
+            if (instance._activeDocument == null)
+                return "No document open.";
+
+            var pair = instance._activeDocument.ActiveSegmentPair;
+            if (pair?.Target == null)
+                return "No active segment.";
+
+            // Count occurrences first (on plain text) to report accurately
+            var plainText = pair.Target.ToString() ?? "";
+            if (string.IsNullOrEmpty(plainText))
+                return "Target segment is empty.";
+
+            int totalReplacements = 0;
+            foreach (var r in transform.Replacements)
+            {
+                if (string.IsNullOrEmpty(r.Find)) continue;
+                int idx = 0;
+                while ((idx = plainText.IndexOf(r.Find, idx, StringComparison.Ordinal)) >= 0)
+                {
+                    totalReplacements++;
+                    idx += r.Find.Length;
+                }
+            }
+
+            if (totalReplacements == 0)
+                return "No matches found \u2014 target unchanged.";
+
+            // Apply replacements through ProcessContentWithDocument so the
+            // Trados editor commits the changes (direct IText property writes
+            // do not persist). This modifies IText nodes in-place inside the
+            // document model, preserving all formatting tags.
+            string result = null;
+            string cleanedText = null;
+            instance.SafeInvoke(() =>
+            {
+                try
+                {
+                    // Capture replacements for use inside the delegate
+                    var replacements = transform.Replacements;
+
+                    instance._activeDocument.ProcessSegmentPair(pair, "Supervertaler",
+                        (sp, cancel) =>
+                        {
+                            foreach (var item in sp.Target.AllSubItems)
+                            {
+                                var textItem = item as IText;
+                                if (textItem == null) continue;
+
+                                var text = textItem.Properties.Text;
+                                if (string.IsNullOrEmpty(text)) continue;
+
+                                foreach (var r in replacements)
+                                {
+                                    if (string.IsNullOrEmpty(r.Find)) continue;
+                                    text = text.Replace(r.Find, r.Replace);
+                                }
+
+                                // Collapse runs of multiple spaces into a single space
+                                // (replacing an invisible char with a space next to an
+                                // existing space would otherwise leave double spaces)
+                                while (text.Contains("  "))
+                                    text = text.Replace("  ", " ");
+
+                                if (text != textItem.Properties.Text)
+                                    textItem.Properties.Text = text;
+                            }
+
+                            // Capture the cleaned plain text for clipboard
+                            cleanedText = sp.Target.ToString();
+                        });
+
+                    // Copy the cleaned text to the clipboard
+                    if (!string.IsNullOrEmpty(cleanedText))
+                    {
+                        try { Clipboard.SetText(cleanedText); } catch { /* clipboard may be locked */ }
+                    }
+
+                    result = $"\u2713 {totalReplacements} replacement{(totalReplacements == 1 ? "" : "s")} applied (copied to clipboard).";
+                }
+                catch (Exception ex)
+                {
+                    result = "Failed to update target: " + ex.Message;
+                }
+            });
+
+            return result ?? "Transform applied.";
+        }
+
+        /// <summary>
+        /// Shows the result of a text transform as a brief MessageBox.
+        /// </summary>
+        public static void ShowTransformResult(string transformName, string result)
+        {
+            MessageBox.Show(result, "Supervertaler \u2014 " + transformName,
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
         // ─── Legacy entry point (AiTranslateSegmentAction compatibility) ──
 
         /// <summary>

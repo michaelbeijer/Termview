@@ -365,6 +365,14 @@ namespace Supervertaler.Trados
 
             item.Click += (s, e) =>
             {
+                // Text transforms: apply find/replace directly to target — no AI call
+                if (capturedPrompt.IsTransform)
+                {
+                    var result = AiAssistantViewPart.RunTextTransform(capturedPrompt);
+                    AiAssistantViewPart.ShowTransformResult(capturedPrompt.Name, result);
+                    return;
+                }
+
                 var content = capturedPrompt.Content;
 
                 // Lazily gather expensive context only if the prompt actually uses it

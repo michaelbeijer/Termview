@@ -140,6 +140,14 @@ namespace Supervertaler.Trados
                 documentName = Core.DocumentContextHelper.GetDocumentName(doc);
             }
 
+            // Text transforms: apply find/replace directly to target — no AI call
+            if (prompt.IsTransform)
+            {
+                var result = AiAssistantViewPart.RunTextTransform(prompt);
+                AiAssistantViewPart.ShowTransformResult(prompt.Name, result);
+                return;
+            }
+
             var surroundingCount = aiSettings?.QuickLauncherSurroundingSegments ?? 5;
             var content = prompt.Content;
 

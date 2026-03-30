@@ -82,6 +82,17 @@ QuickLauncher puts your most-used AI prompts in the editor right-click menu. Sel
 
 Prompts support nine variables: `{{SOURCE_LANGUAGE}}`, `{{TARGET_LANGUAGE}}`, `{{SOURCE_SEGMENT}}`, `{{TARGET_SEGMENT}}`, `{{SELECTION}}`, `{{PROJECT_NAME}}`, `{{DOCUMENT_NAME}}`, `{{SURROUNDING_SEGMENTS}}` (configurable context window with actual Trados segment numbers), and `{{PROJECT}}` (all source segments numbered — useful for full-document queries on important projects). Any `.svprompt` file with `category: QuickLauncher` in its frontmatter, or placed in a `QuickLauncher` folder, appears in the menu automatically and is shared with Supervertaler Workbench via the shared prompt library.
 
+## Text Transforms — local find-and-replace
+
+Text transforms are a special type of QuickLauncher prompt that runs local find-and-replace operations on the active target segment — instantly, without calling an AI provider. Useful for cleaning up invisible characters (InDesign U+2028 line separators, zero-width spaces, etc.) or normalising punctuation.
+
+- **Built-in "Strip U+2028" transform** — removes invisible Unicode LINE SEPARATOR and PARAGRAPH SEPARATOR characters from the target segment
+- **Simple rule format** — `find:` / `replace:` pairs in the prompt content body with `\uXXXX` Unicode escape support
+- **Tag-safe** — modifies text content while preserving all formatting tags (bold, italic, etc.)
+- **Clipboard copy** — cleaned text is automatically copied to the clipboard
+- **Create your own** — set `type: transform` in the YAML frontmatter and write your rules in the content body
+- **Keyboard shortcuts** — assign to Ctrl+Alt+1–0 slots like any other QuickLauncher prompt
+
 ---
 
 ## AI Assistant — project-aware chat

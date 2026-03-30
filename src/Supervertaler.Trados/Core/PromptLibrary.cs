@@ -525,16 +525,21 @@ namespace Supervertaler.Trados.Core
                 {
                     var sb = new StringBuilder();
                     sb.AppendLine("---");
-                    sb.AppendLine("type: prompt");
+                    sb.AppendLine("type: " + (builtin.IsTransform ? "transform" : "prompt"));
                     sb.AppendLine("name: \"" + EscapeYamlString(builtin.Name) + "\"");
                     if (!string.IsNullOrEmpty(builtin.Description))
                         sb.AppendLine("description: \"" + EscapeYamlString(builtin.Description) + "\"");
                     if (!string.IsNullOrEmpty(builtin.Category))
                         sb.AppendLine("category: \"" + EscapeYamlString(builtin.Category) + "\"");
+                    if (builtin.SortOrder != 100)
+                        sb.AppendLine("sort_order: " + builtin.SortOrder);
                     sb.AppendLine("built_in: true");
                     sb.AppendLine("---");
-                    sb.AppendLine();
-                    sb.Append(builtin.Content);
+                    if (!string.IsNullOrEmpty(builtin.Content))
+                    {
+                        sb.AppendLine();
+                        sb.Append(builtin.Content);
+                    }
 
                     File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
                 }
@@ -786,7 +791,45 @@ namespace Supervertaler.Trados.Core
             // Normalise domain regardless of whether it came from YAML or folder name
             NormaliseCategory(prompt);
 
+            // For text transforms, parse find/replace rules from the content body.
+            // Format: find: "..." / replace: "..." pairs, separated by blank lines.
+            // Lines starting with # are comments. Supports \uXXXX escape sequences.
+            if (prompt.IsTransform && !string.IsNullOrEmpty(prompt.Content))
+                ParseTransformContent(prompt);
+
             return prompt;
+        }
+
+        /// <summary>
+        /// Parses find/replace rules from a text transform's content body.
+        /// Each rule is a find:/replace: pair. Blank lines and # comments are ignored.
+        /// Supports \uXXXX escape sequences and quoted values.
+        /// </summary>
+        private void ParseTransformContent(PromptTemplate prompt)
+        {
+            prompt.Replacements.Clear();
+            TextReplacement current = null;
+
+            var lines = prompt.Content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim();
+                if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#"))
+                    continue;
+
+                if (trimmed.StartsWith("find:", StringComparison.OrdinalIgnoreCase))
+                {
+                    current = new TextReplacement
+                    {
+                        Find = UnescapeYamlString(trimmed.Substring(5).Trim())
+                    };
+                    prompt.Replacements.Add(current);
+                }
+                else if (trimmed.StartsWith("replace:", StringComparison.OrdinalIgnoreCase) && current != null)
+                {
+                    current.Replace = UnescapeYamlString(trimmed.Substring(8).Trim());
+                }
+            }
         }
 
         /// <summary>
@@ -825,6 +868,7 @@ namespace Supervertaler.Trados.Core
         private void ParseYamlFrontmatter(PromptTemplate prompt, string yaml)
         {
             var lines = yaml.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
             foreach (var line in lines)
             {
                 var trimmed = line.Trim();
@@ -892,6 +936,49 @@ namespace Supervertaler.Trados.Core
             }
         }
 
+        /// <summary>
+        /// Unescapes common YAML string escape sequences (\uXXXX, \n, \t)
+        /// and strips surrounding quotes.
+        /// </summary>
+        private static string UnescapeYamlString(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+
+            // Strip surrounding quotes
+            if (s.Length >= 2 &&
+                ((s.StartsWith("\"") && s.EndsWith("\"")) ||
+                 (s.StartsWith("'") && s.EndsWith("'"))))
+            {
+                s = s.Substring(1, s.Length - 2);
+            }
+
+            // Unescape \uXXXX sequences
+            var sb = new StringBuilder(s.Length);
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == '\\' && i + 1 < s.Length)
+                {
+                    var next = s[i + 1];
+                    if (next == 'u' && i + 5 < s.Length)
+                    {
+                        int code;
+                        if (int.TryParse(s.Substring(i + 2, 4),
+                            System.Globalization.NumberStyles.HexNumber, null, out code))
+                        {
+                            sb.Append((char)code);
+                            i += 5;
+                            continue;
+                        }
+                    }
+                    else if (next == 'n') { sb.Append('\n'); i++; continue; }
+                    else if (next == 't') { sb.Append('\t'); i++; continue; }
+                    else if (next == '\\') { sb.Append('\\'); i++; continue; }
+                }
+                sb.Append(s[i]);
+            }
+            return sb.ToString();
+        }
+
         private static string GetRelativePath(string fullPath, string rootDir)
         {
             if (string.IsNullOrEmpty(fullPath) || string.IsNullOrEmpty(rootDir))
@@ -931,6 +1018,28 @@ namespace Supervertaler.Trados.Core
         public static string EscapeYaml(string s)
         {
             return (s ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        /// <summary>
+        /// Escapes a string for YAML, converting non-ASCII characters to \uXXXX sequences.
+        /// Used for replacement find/replace values that may contain invisible Unicode characters.
+        /// </summary>
+        private static string EscapeUnicodeForYaml(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            var sb = new StringBuilder(s.Length * 2);
+            foreach (char c in s)
+            {
+                if (c > 127)
+                    sb.AppendFormat("\\u{0:X4}", (int)c);
+                else if (c == '\\')
+                    sb.Append("\\\\");
+                else if (c == '"')
+                    sb.Append("\\\"");
+                else
+                    sb.Append(c);
+            }
+            return sb.ToString();
         }
 
         // ─── Built-in Prompt Definitions ──────────────────────────────
@@ -1303,6 +1412,29 @@ Analyse the complete source text above and produce a **Project Brief** in clean 
 - Recommendations for maintaining consistency throughout the translation
 
 Format the entire output as a single Markdown document that can be copied and pasted directly into another AI tool's chat interface."
+                },
+
+                // ─── Text operations (transforms — no AI call) ───────────
+                new PromptTemplate
+                {
+                    Name = "Strip U+2028",
+                    Description = "Removes invisible Unicode LINE SEPARATOR (U+2028) and PARAGRAPH SEPARATOR (U+2029) characters from the target segment, replacing them with spaces",
+                    Category = "QuickLauncher/Text operations",
+                    Type = "transform",
+                    IsBuiltIn = true,
+                    SortOrder = 10,
+                    Content = @"# Strip invisible Unicode line/paragraph separators.
+# These are commonly inserted by InDesign (IDML) as forced line breaks
+# (Shift+Enter). They are invisible in Trados but can corrupt translations.
+#
+# Each rule is a find:/replace: pair. Use \uXXXX for Unicode characters.
+# Lines starting with # are comments.
+
+find: ""\u2028""
+replace: "" ""
+
+find: ""\u2029""
+replace: "" """
                 }
             };
         }

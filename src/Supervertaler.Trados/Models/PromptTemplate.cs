@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Supervertaler.Trados.Models
 {
     /// <summary>
@@ -78,6 +80,29 @@ namespace Supervertaler.Trados.Models
         /// <summary>The label to display in the QuickLauncher menu (QuickLauncherLabel if set, else Name).</summary>
         public string MenuLabel => string.IsNullOrWhiteSpace(QuickLauncherLabel) ? Name : QuickLauncherLabel;
 
+        /// <summary>
+        /// True when this template is a local text transform (type: transform)
+        /// rather than an AI prompt. Transforms apply find/replace rules directly
+        /// to the target segment without calling an AI provider.
+        /// </summary>
+        public bool IsTransform => "transform".Equals(Type, System.StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Find/replace pairs for text transforms (type: transform).
+        /// Each entry has a Find string and a Replace string.
+        /// Parsed from YAML frontmatter 'replacements:' block.
+        /// </summary>
+        public List<TextReplacement> Replacements { get; set; } = new List<TextReplacement>();
+
         public override string ToString() => Name;
+    }
+
+    /// <summary>
+    /// A single find/replace rule used by text transform prompts.
+    /// </summary>
+    public class TextReplacement
+    {
+        public string Find { get; set; } = "";
+        public string Replace { get; set; } = "";
     }
 }

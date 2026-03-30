@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.18.27] — 2026-03-30
+
+### Added
+- **Text transforms in QuickLauncher** – new `type: transform` prompt type that performs local find-and-replace on the active target segment without calling an AI provider; rules are defined as `find:`/`replace:` pairs in the prompt content body with `\uXXXX` Unicode escape support; built-in "Strip U+2028" transform removes invisible InDesign line separators; cleaned text is automatically copied to the clipboard; see [Text Transforms](https://supervertaler.gitbook.io/trados/features/text-transforms) in the help docs
+
+---
+
 ## [4.18.26] — 2026-03-30
 
 ### Added
