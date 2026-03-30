@@ -249,15 +249,15 @@ namespace Supervertaler.Trados.Controls
             _nudOllamaTimeout = new NumericUpDown
             {
                 Location = new Point(120, 35),
-                Width = 60,
+                Width = 65,
                 Minimum = 0,
                 Maximum = 120,
                 Value = 0
             };
             _lblOllamaTimeoutHint = new Label
             {
-                Text = "0 = auto (3\u201310 min based on model size)",
-                Location = new Point(186, 38),
+                Text = "0 = auto (3\u201310 min, based on model size)",
+                Location = new Point(192, 38),
                 AutoSize = true,
                 ForeColor = Color.Gray,
                 Font = new Font("Segoe UI", 8f)

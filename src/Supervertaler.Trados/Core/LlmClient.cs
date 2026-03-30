@@ -1208,7 +1208,8 @@ namespace Supervertaler.Trados.Core
             var lower = _model.ToLowerInvariant();
             if (lower.Contains("14b") || lower.Contains("13b") || lower.Contains("20b"))
                 return 600_000;
-            if (lower.Contains("7b") || lower.Contains("8b") || lower.Contains("9b"))
+            if (lower.Contains("7b") || lower.Contains("8b") || lower.Contains("9b")
+                || lower.Contains("12b") || lower.Contains("11b") || lower.Contains("10b"))
                 return 300_000;
             return 180_000;
         }
