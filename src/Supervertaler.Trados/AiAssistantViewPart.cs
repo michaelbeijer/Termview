@@ -534,7 +534,8 @@ namespace Supervertaler.Trados
             {
                 try
                 {
-                    var client = new LlmClient(capturedProvider, capturedModel, capturedKey, capturedBaseUrl);
+                    var client = new LlmClient(capturedProvider, capturedModel, capturedKey, capturedBaseUrl,
+                        ollamaTimeoutMinutes: aiSettings.OllamaTimeoutMinutes);
                     var response = await client.SendChatAsync(
                         capturedMessages, capturedSystemPrompt,
                         maxTokens: capturedMaxTokens, cancellationToken: ct,
@@ -1824,7 +1825,8 @@ namespace Supervertaler.Trados
                             var client = new LlmClient(
                                 capturedAiSettings.SelectedProvider,
                                 capturedAiSettings.GetSelectedModel(),
-                                apiKey, baseUrl);
+                                apiKey, baseUrl,
+                                ollamaTimeoutMinutes: capturedAiSettings.OllamaTimeoutMinutes);
 
                             // For single segment, send it directly (not numbered batch format)
                             var userPrompt = $"Translate the following segment:\n\n{sourceText}";

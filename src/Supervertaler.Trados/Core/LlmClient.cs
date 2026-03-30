@@ -49,15 +49,18 @@ namespace Supervertaler.Trados.Core
         private readonly bool _isReasoningModel;
         private readonly int _defaultTimeoutMs;
         private readonly int _maxTokens;
+        private readonly int _ollamaTimeoutMinutes;
 
         public LlmClient(string provider, string model, string apiKey,
-                          string baseUrl = null, int maxTokens = 16384)
+                          string baseUrl = null, int maxTokens = 16384,
+                          int ollamaTimeoutMinutes = 0)
         {
             _provider = provider ?? LlmModels.ProviderOpenAi;
             _model = model ?? "gpt-5.4-mini";
             _apiKey = apiKey ?? "";
             _baseUrl = baseUrl;
             _maxTokens = maxTokens;
+            _ollamaTimeoutMinutes = ollamaTimeoutMinutes;
 
             var modelInfo = LlmModels.FindModel(_model);
             _isReasoningModel = modelInfo?.IsReasoningModel ?? IsReasoningModel(_model);
@@ -1199,6 +1202,9 @@ namespace Supervertaler.Trados.Core
 
         private int GetOllamaTimeout()
         {
+            if (_ollamaTimeoutMinutes > 0)
+                return _ollamaTimeoutMinutes * 60_000;
+
             var lower = _model.ToLowerInvariant();
             if (lower.Contains("14b") || lower.Contains("13b") || lower.Contains("20b"))
                 return 600_000;

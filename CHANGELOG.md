@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.18.24] — 2026-03-30
+
+### Added
+- **Customisable Ollama timeout** – new "Timeout (min)" setting in AI Settings lets users override the automatic timeout (3–10 min based on model size) with a custom value up to 120 minutes, useful for long-running jobs on hardware without a dedicated GPU
+
+---
+
 ## [4.18.22] — 2026-03-29
 
 ### Added

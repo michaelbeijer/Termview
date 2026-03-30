@@ -28,6 +28,8 @@ namespace Supervertaler.Trados.Controls
         // Ollama section
         private Panel _pnlOllama;
         private TextBox _txtOllamaEndpoint;
+        private NumericUpDown _nudOllamaTimeout;
+        private Label _lblOllamaTimeoutHint;
 
         // Custom OpenAI section
         private Panel _pnlCustom;
@@ -217,7 +219,7 @@ namespace Supervertaler.Trados.Controls
             _pnlOllama = new Panel
             {
                 Location = new Point(0, y),
-                Size = new Size(400, 50),
+                Size = new Size(400, 80),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 Visible = false
             };
@@ -236,8 +238,36 @@ namespace Supervertaler.Trados.Controls
                 Text = "http://localhost:11434",
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
+
+            var lblOllamaTimeout = new Label
+            {
+                Text = "Timeout (min):",
+                Location = new Point(16, 38),
+                AutoSize = true,
+                ForeColor = labelColor
+            };
+            _nudOllamaTimeout = new NumericUpDown
+            {
+                Location = new Point(120, 35),
+                Width = 60,
+                Minimum = 0,
+                Maximum = 120,
+                Value = 0
+            };
+            _lblOllamaTimeoutHint = new Label
+            {
+                Text = "0 = auto (3\u201310 min based on model size)",
+                Location = new Point(186, 38),
+                AutoSize = true,
+                ForeColor = Color.Gray,
+                Font = new Font("Segoe UI", 8f)
+            };
+
             _pnlOllama.Controls.Add(lblOllamaEndpoint);
             _pnlOllama.Controls.Add(_txtOllamaEndpoint);
+            _pnlOllama.Controls.Add(lblOllamaTimeout);
+            _pnlOllama.Controls.Add(_nudOllamaTimeout);
+            _pnlOllama.Controls.Add(_lblOllamaTimeoutHint);
             Controls.Add(_pnlOllama);
 
             // === Custom OpenAI section ===
@@ -716,6 +746,8 @@ namespace Supervertaler.Trados.Controls
 
             // Ollama
             _txtOllamaEndpoint.Text = settings.OllamaEndpoint ?? "http://localhost:11434";
+            _nudOllamaTimeout.Value = Math.Max(_nudOllamaTimeout.Minimum,
+                Math.Min(_nudOllamaTimeout.Maximum, settings.OllamaTimeoutMinutes));
 
             // Custom OpenAI profiles
             PopulateCustomProfiles(settings);
@@ -808,8 +840,9 @@ namespace Supervertaler.Trados.Controls
             settings.ApiKeys.Mistral = _providerApiKeys.TryGetValue(LlmModels.ProviderMistral, out val) ? val : "";
             settings.ApiKeys.CustomOpenAi = _providerApiKeys.TryGetValue(LlmModels.ProviderCustomOpenAi, out val) ? val : "";
 
-            // Ollama endpoint
+            // Ollama endpoint + timeout
             settings.OllamaEndpoint = _txtOllamaEndpoint.Text.Trim();
+            settings.OllamaTimeoutMinutes = (int)_nudOllamaTimeout.Value;
 
             // Custom OpenAI profiles — save current profile values first
             SaveCurrentCustomProfile(settings);

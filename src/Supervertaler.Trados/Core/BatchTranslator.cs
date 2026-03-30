@@ -168,7 +168,8 @@ namespace Supervertaler.Trados.Core
 
             RaiseProgress(0, segments.Count, "Starting translation...", false, TimeSpan.Zero);
 
-            using (var client = new LlmClient(provider, model, apiKey, baseUrl, maxTokens))
+            using (var client = new LlmClient(provider, model, apiKey, baseUrl, maxTokens,
+                ollamaTimeoutMinutes: aiSettings.OllamaTimeoutMinutes))
             {
                 for (int batchNum = 0; batchNum < totalBatches; batchNum++)
                 {

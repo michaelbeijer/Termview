@@ -35,6 +35,13 @@ namespace Supervertaler.Trados.Settings
         [DataMember(Name = "ollamaEndpoint")]
         public string OllamaEndpoint { get; set; } = "http://localhost:11434";
 
+        /// <summary>
+        /// User-configurable timeout for Ollama requests, in minutes.
+        /// 0 means automatic (based on model size: 3–10 min).
+        /// </summary>
+        [DataMember(Name = "ollamaTimeoutMinutes")]
+        public int OllamaTimeoutMinutes { get; set; }
+
         [DataMember(Name = "apiKeys")]
         public AiApiKeys ApiKeys { get; set; } = new AiApiKeys();
 
