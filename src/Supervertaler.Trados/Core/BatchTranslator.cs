@@ -105,7 +105,8 @@ namespace Supervertaler.Trados.Core
             int batchSize,
             CancellationToken cancellationToken,
             string customPromptContent = null,
-            string customSystemPrompt = null)
+            string customSystemPrompt = null,
+            List<string> documentSegments = null)
         {
             var sw = Stopwatch.StartNew();
             int translated = 0;
@@ -126,10 +127,16 @@ namespace Supervertaler.Trados.Core
                 return;
             }
 
-            // Build system prompt (composable: base → custom prompt → termbase)
+            // Build system prompt (composable: base → custom prompt → termbase → document context)
+            var includeDoc = aiSettings?.IncludeDocumentContext != false;
+            var maxDocSegs = aiSettings?.DocumentContextMaxSegments ?? 500;
+            var includeTermMeta = aiSettings?.IncludeTermMetadata != false;
             var systemPrompt = TranslationPrompt.BuildSystemPrompt(
                 sourceLang, targetLang,
-                customPromptContent, termbaseTerms, customSystemPrompt);
+                customPromptContent, termbaseTerms, customSystemPrompt,
+                includeDoc ? documentSegments : null,
+                maxDocSegs,
+                includeTermMeta);
 
             // Resolve provider settings
             var provider = aiSettings.SelectedProvider ?? LlmModels.ProviderOpenAi;

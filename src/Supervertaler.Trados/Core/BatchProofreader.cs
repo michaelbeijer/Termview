@@ -51,7 +51,8 @@ namespace Supervertaler.Trados.Core
             List<TermEntry> termbaseTerms,
             int batchSize,
             CancellationToken cancellationToken,
-            string customPromptContent = null)
+            string customPromptContent = null,
+            List<string> documentSegments = null)
         {
             var sw = Stopwatch.StartNew();
             int totalChecked = 0;
@@ -67,9 +68,15 @@ namespace Supervertaler.Trados.Core
                 return;
             }
 
-            // Build system prompt
+            // Build system prompt (with document context and term metadata)
+            var includeDoc = aiSettings?.IncludeDocumentContext != false;
+            var maxDocSegs = aiSettings?.DocumentContextMaxSegments ?? 500;
+            var includeTermMeta = aiSettings?.IncludeTermMetadata != false;
             var systemPrompt = ProofreadingPrompt.BuildSystemPrompt(
-                sourceLang, targetLang, termbaseTerms, customPromptContent);
+                sourceLang, targetLang, termbaseTerms, customPromptContent,
+                includeDoc ? documentSegments : null,
+                maxDocSegs,
+                includeTermMeta);
 
             // Resolve provider settings
             var provider = aiSettings.SelectedProvider ?? LlmModels.ProviderOpenAi;

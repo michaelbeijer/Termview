@@ -57,29 +57,33 @@ For providers that expose an OpenAI-compatible API (e.g., Azure OpenAI, together
 
 ## AI context options
 
-These options control what additional context is included when the AI translates a segment.
+These options control what additional context is included in AI prompts. The settings are split into two groups depending on which features they apply to.
 
-### Include termbases in AI prompt
+### Which settings apply where
 
-When enabled, terminology matches from active termbases for the current segment are injected into the translation prompt. This helps the AI use the correct, approved terminology.
+| Setting | Chat & QuickLauncher | Batch Operations |
+|---------|:--------------------:|:----------------:|
+| Termbases in AI prompts | Yes | Yes |
+| Include full document content | Yes | Yes |
+| Max segments | Yes | Yes |
+| Include term definitions and domains | Yes | Yes |
+| Log prompts to Reports | Yes | Yes |
+| Include TM matches | Yes | No |
+| Surrounding segments | Yes | No |
 
-For [AutoPrompt](../generate-prompt.md), **TermScan** automatically filters the termbase to only terms that appear in the document's source text, keeping the prompt focused and within token limits.
+### AI context (Batch operations, Chat and QuickLauncher)
 
-{% hint style="warning" %}
-**Only enable termbases you trust.** The AI will follow your glossary entries even when they are wrong. If a termbase contains inaccurate, outdated, or low-quality translations, the AI will be forced to use them — producing worse results than if no termbase were enabled at all. Modern LLMs are remarkably good at choosing correct terminology on their own. When in doubt, disable termbases and add terms incrementally as you review the AI's output.
-{% endhint %}
+These settings apply to **all** AI features – Chat, QuickLauncher, Batch Translate, and Batch Proofread.
 
-### Include TM matches
+#### Include full document content
 
-When enabled, translation memory matches for the current segment are included in the prompt. This gives the AI context from previous translations, improving consistency. This setting also controls whether TM reference pairs are included when using [AutoPrompt](../generate-prompt.md).
-
-### Include full document content
-
-When enabled, all source segments in the current document are sent to the AI so it can determine the document type (legal, medical, technical, marketing, etc.) and provide context-appropriate assistance. This uses more tokens but greatly improves response quality — the AI can tailor its terminology and style recommendations to the specific type of document you are translating.
+When enabled, all source segments in the current document are sent to the AI so it can determine the document type (legal, medical, technical, marketing, etc.) and provide context-appropriate assistance. This uses more tokens but greatly improves response quality – the AI can tailor its terminology and style to the specific type of document you are translating.
 
 For very large documents, the content is automatically truncated to the configured maximum. The truncation preserves the beginning and end of the document (first 80% + last 20%).
 
-### Max segments
+For Batch Operations, the document content is included once in the system prompt (shared across all batches), so the AI knows what kind of document it is translating even when processing individual batches of segments.
+
+#### Max segments
 
 The maximum number of source segments to include in the AI prompt when document content is enabled. Default: **500**. Range: 100–2000.
 
@@ -89,9 +93,41 @@ Increase this for very large documents where you want the AI to see more content
 This setting is only available when **Include full document content** is enabled.
 {% endhint %}
 
-### Include term definitions and domains
+#### Include term definitions and domains
 
-When enabled, term definitions, domains, and usage notes from your termbases are included alongside matched terminology in the AI prompt. This gives the AI deeper understanding of your terminology — for example, knowing that a term belongs to the legal domain or has a specific definition helps the AI use it correctly.
+When enabled, term definitions, domains, and usage notes from your termbases are included alongside matched terminology in the AI prompt. This gives the AI deeper understanding of your terminology – for example, knowing that a term belongs to the legal domain or has a specific definition helps the AI use it correctly in both chat responses and batch translations.
+
+#### Include termbases in AI prompt
+
+Select which termbases are included in AI prompts. Terminology matches from enabled termbases are injected into the prompt to help the AI use the correct, approved terminology.
+
+For [AutoPrompt](../generate-prompt.md), **TermScan** automatically filters the termbase to only terms that appear in the document's source text, keeping the prompt focused and within token limits.
+
+{% hint style="warning" %}
+**Only enable termbases you trust.** The AI will follow your glossary entries even when they are wrong. If a termbase contains inaccurate, outdated, or low-quality translations, the AI will be forced to use them – producing worse results than if no termbase were enabled at all. Modern LLMs are remarkably good at choosing correct terminology on their own. When in doubt, disable termbases and add terms incrementally as you review the AI's output.
+{% endhint %}
+
+### AI context (Chat and QuickLauncher)
+
+These settings apply only to the **Supervertaler Assistant** chat window and **QuickLauncher** prompts. They do **not** affect Batch Translate or Batch Proofread.
+
+#### Include TM matches
+
+When enabled, translation memory matches for the current segment are included in the prompt. This gives the AI context from previous translations, improving consistency. This setting also controls whether TM reference pairs are included when using [AutoPrompt](../generate-prompt.md).
+
+{% hint style="info" %}
+TM matches are per-segment and require a Trados TM lookup for each segment. Batch Operations skip this to keep processing fast.
+{% endhint %}
+
+#### Surrounding segments
+
+The number of segments before and after the active segment to include as context. Default: **5** (five segments on each side). Range: 1–20.
+
+This provides the AI with local context around the segment you are working on. It is also used for the `{{SURROUNDING_SEGMENTS}}` variable in [QuickLauncher prompts](prompts/prompt-variables.md).
+
+{% hint style="info" %}
+Batch Operations do not use this setting because each batch already contains a group of segments that provide context for each other.
+{% endhint %}
 
 {% hint style="success" %}
 **Tip:** For the best results, enable all context options. The more information the AI has about your project, document, terminology, and previous translations, the more accurate and consistent its suggestions will be.

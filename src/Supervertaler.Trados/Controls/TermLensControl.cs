@@ -302,15 +302,7 @@ namespace Supervertaler.Trados.Controls
             foreach (var token in tokens)
             {
                 if (token.IsLineBreak)
-                {
-                    // Force a line break in the flow layout
-                    _flowPanel.SetFlowBreak(
-                        _flowPanel.Controls.Count > 0
-                            ? _flowPanel.Controls[_flowPanel.Controls.Count - 1]
-                            : null,
-                        true);
                     continue;
-                }
 
                 wordCount++;
 
@@ -373,9 +365,15 @@ namespace Supervertaler.Trados.Controls
                         });
                     }
 
+                    int maxBlockWidth = _flowPanel.ClientSize.Width
+                        - _flowPanel.Padding.Horizontal
+                        - UiScale.Pixels(4); // margin allowance
+                    if (maxBlockWidth < 60) maxBlockWidth = 60; // sane minimum
+
                     var block = new TermBlock(token.Text, sortedEntries, shortcutIndex, isProject, isNonTranslatable, isMultiTerm, token.AbbreviationMatchIds)
                     {
                         Font = Font,
+                        MaxWidth = maxBlockWidth,
                         Margin = new Padding(UiScale.Pixels(2), UiScale.Pixels(1), UiScale.Pixels(2), UiScale.Pixels(1))
                     };
 

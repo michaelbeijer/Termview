@@ -988,6 +988,14 @@ namespace Supervertaler.Trados
                 var customPromptContent = ResolveCustomPromptContent(sourceLang, targetLang);
                 var customSystemPrompt = aiSettings.CustomSystemPrompt;
 
+                // Collect document context for AI document type analysis
+                List<string> docSegments = null;
+                if (aiSettings.IncludeDocumentContext)
+                {
+                    var docCtx = CollectDocumentContext();
+                    docSegments = docCtx.Item1;
+                }
+
                 int batchSize = aiSettings.BatchSize > 0 ? aiSettings.BatchSize : 20;
 
                 // Start the batch translation
@@ -1012,7 +1020,8 @@ namespace Supervertaler.Trados
                         await _batchTranslator.TranslateAsync(
                             segments, sourceLang, targetLang,
                             aiSettings, termbaseTerms, batchSize, ct,
-                            customPromptContent, customSystemPrompt);
+                            customPromptContent, customSystemPrompt,
+                            docSegments);
                     }
                     catch (Exception ex)
                     {
@@ -1054,17 +1063,18 @@ namespace Supervertaler.Trados
                 {
                     if (e.SegmentPairRef == null || _activeDocument == null) return;
 
-                    // Tagged segments: use ProcessSegmentPair to modify via the document
-                    // model directly. This avoids the editor buffer issue where direct
-                    // manipulation of ActiveSegmentPair.Target gets lost because the
-                    // editor has its own buffer.
-                    if (e.HasTags && e.TagMap != null && e.TagMap.Count > 0)
-                    {
-                        var pair = e.SegmentPairRef as ISegmentPair;
-                        if (pair == null) return;
+                    // All segments now store ISegmentPair for ProcessSegmentPair.
+                    // This avoids the editor buffer issue (Selection.Target.Replace
+                    // loses changes) and ensures correct soft return handling for
+                    // Excel/Visio segments with literal newlines.
+                    var pair = e.SegmentPairRef as ISegmentPair;
+                    if (pair == null) return;
 
-                        _activeDocument.ProcessSegmentPair(pair, "Supervertaler",
-                            (sp, cancel) =>
+                    _activeDocument.ProcessSegmentPair(pair, "Supervertaler",
+                        (sp, cancel) =>
+                        {
+                            // Tagged segments: reconstruct with full tag handling
+                            if (e.HasTags && e.TagMap != null && e.TagMap.Count > 0)
                             {
                                 bool reconstructed = SegmentTagHandler.ReconstructTarget(
                                     sp.Target, sp.Source, e.Translation, e.TagMap);
@@ -1082,36 +1092,22 @@ namespace Supervertaler.Trados
                                         sp.Target.Add(textClone);
                                     }
                                 }
-                            });
-                        return;
-                    }
+                                return;
+                            }
 
-                    // Non-tagged segments: navigate + editor Replace (proven approach)
-                    var ids = e.SegmentPairRef as string[];
-                    if (ids != null && ids.Length >= 2)
-                    {
-                        _activeDocument.SetActiveSegmentPair(ids[0], ids[1], true);
-                        _activeDocument.Selection.Target.Replace(e.Translation, "Supervertaler");
-                    }
-                    else
-                    {
-                        // SegmentPairRef is an ISegmentPair (all segments store pairs now)
-                        var pair = e.SegmentPairRef as ISegmentPair;
-                        if (pair == null) return;
-
-                        _activeDocument.ProcessSegmentPair(pair, "Supervertaler",
-                            (sp, cancel) =>
+                            // Non-tagged segments: clone IText from source and set text.
+                            // For segments with literal \n (Excel, Visio), the cloned IText
+                            // preserves the text properties so Trados renders soft returns
+                            // instead of paragraph marks.
+                            var textTpl = SegmentTagHandler.FindFirstText(sp.Source);
+                            if (textTpl != null && !string.IsNullOrEmpty(e.Translation))
                             {
-                                var textTemplate = SegmentTagHandler.FindFirstText(sp.Source);
-                                if (textTemplate != null && !string.IsNullOrEmpty(e.Translation))
-                                {
-                                    sp.Target.Clear();
-                                    var textClone = (IText)textTemplate.Clone();
-                                    textClone.Properties.Text = e.Translation;
-                                    sp.Target.Add(textClone);
-                                }
-                            });
-                    }
+                                sp.Target.Clear();
+                                var textClone = (IText)textTpl.Clone();
+                                textClone.Properties.Text = e.Translation;
+                                sp.Target.Add(textClone);
+                            }
+                        });
                 }
                 catch (Exception ex)
                 {
@@ -1236,6 +1232,14 @@ namespace Supervertaler.Trados
 
                 var customPromptContent = ResolveCustomPromptContent(sourceLang, targetLang);
 
+                // Collect document context for AI document type analysis
+                List<string> docSegments = null;
+                if (aiSettings.IncludeDocumentContext)
+                {
+                    var docCtx = CollectDocumentContext();
+                    docSegments = docCtx.Item1;
+                }
+
                 int batchSize = aiSettings.BatchSize > 0 ? aiSettings.BatchSize : 20;
 
                 // Initialize the report
@@ -1263,7 +1267,8 @@ namespace Supervertaler.Trados
                         await _batchProofreader.ProofreadAsync(
                             segments, sourceLang, targetLang,
                             aiSettings, termbaseTerms, batchSize, ct,
-                            customPromptContent);
+                            customPromptContent,
+                            docSegments);
                     }
                     catch (Exception ex)
                     {
@@ -1555,29 +1560,16 @@ namespace Supervertaler.Trados
 
                     if (include)
                     {
-                        // For tagged segments, store the ISegmentPair directly so we
-                        // can use ProcessSegmentPair (which handles the edit transaction).
-                        // For non-tagged segments, store string[] IDs for SetActiveSegmentPair
-                        // + Selection.Target.Replace (the proven fast path).
-                        object segRef;
-                        if (serialization.HasTags)
-                        {
-                            segRef = pair;
-                        }
-                        else
-                        {
-                            var parentPU = _activeDocument.GetParentParagraphUnit(pair);
-                            var paragraphUnitId = parentPU.Properties.ParagraphUnitId.Id;
-                            var segmentId = pair.Properties.Id.Id;
-                            segRef = new[] { paragraphUnitId, segmentId };
-                        }
-
+                        // Always store ISegmentPair so ProcessSegmentPair can be used
+                        // for all segments. This ensures correct handling of literal
+                        // newlines (Excel, Visio) which need IText cloning from source
+                        // to produce soft returns instead of paragraph marks.
                         segments.Add(new BatchSegment
                         {
                             Index = index,
                             SourceText = sourceText,
                             ExistingTarget = targetText,
-                            SegmentPairRef = segRef,
+                            SegmentPairRef = pair,
                             HasTags = serialization.HasTags,
                             TagMap = serialization.HasTags ? serialization.TagMap : null
                         });
@@ -1804,6 +1796,14 @@ namespace Supervertaler.Trados
                     var customPromptContent = instance.ResolveCustomPromptContent(sourceLang, targetLang);
                     var customSystemPrompt = aiSettings.CustomSystemPrompt;
 
+                    // Collect document context for AI document type analysis
+                    List<string> singleDocSegments = null;
+                    if (aiSettings.IncludeDocumentContext)
+                    {
+                        var docCtx = instance.CollectDocumentContext();
+                        singleDocSegments = docCtx.Item1;
+                    }
+
                     // Log to batch translate panel for visibility
                     var batchControl = _control.Value.BatchTranslateControl;
                     batchControl.AppendLog($"Translating segment: \"{Truncate(sourceText, 60)}\"...");
@@ -1816,7 +1816,10 @@ namespace Supervertaler.Trados
                         {
                             var systemPrompt = TranslationPrompt.BuildSystemPrompt(
                                 sourceLang, targetLang,
-                                customPromptContent, termbaseTerms, customSystemPrompt);
+                                customPromptContent, termbaseTerms, customSystemPrompt,
+                                singleDocSegments,
+                                capturedAiSettings.DocumentContextMaxSegments,
+                                capturedAiSettings.IncludeTermMetadata);
 
                             var client = new LlmClient(
                                 capturedAiSettings.SelectedProvider,
@@ -1869,6 +1872,32 @@ namespace Supervertaler.Trados
 
                                             // Reconstruction failed — strip placeholders, use plain text
                                             translation = SegmentTagHandler.StripTagPlaceholders(translation);
+                                        }
+
+                                        // If translation contains newlines, use ProcessSegmentPair
+                                        // with text cloning to preserve soft returns (e.g. Excel, Visio).
+                                        // The editor's Replace() API converts \n to paragraph marks.
+                                        if (translation.IndexOf('\n') >= 0 || translation.IndexOf('\r') >= 0)
+                                        {
+                                            var activePair = instance._activeDocument.ActiveSegmentPair;
+                                            if (activePair != null)
+                                            {
+                                                instance._activeDocument.ProcessSegmentPair(activePair, "Supervertaler",
+                                                    (sp, cancel) =>
+                                                    {
+                                                        var textTpl = SegmentTagHandler.FindFirstText(sp.Source);
+                                                        if (textTpl != null)
+                                                        {
+                                                            sp.Target.Clear();
+                                                            var textClone = (IText)textTpl.Clone();
+                                                            textClone.Properties.Text = translation;
+                                                            sp.Target.Add(textClone);
+                                                        }
+                                                    });
+                                                batchControl.AppendLog(
+                                                    $"Done: \"{Truncate(translation, 60)}\"");
+                                                return;
+                                            }
                                         }
 
                                         instance._activeDocument.Selection.Target.Replace(
@@ -2008,20 +2037,9 @@ namespace Supervertaler.Trados
                         return;
                     }
 
-                    // Build single-segment batch
-                    object segRef;
-                    if (hasTags)
-                    {
-                        segRef = pair;
-                    }
-                    else
-                    {
-                        var parentPU = instance._activeDocument.GetParentParagraphUnit(pair);
-                        var paragraphUnitId = parentPU.Properties.ParagraphUnitId.Id;
-                        var segmentId = pair.Properties.Id.Id;
-                        segRef = new[] { paragraphUnitId, segmentId };
-                    }
-
+                    // Always store ISegmentPair so ProcessSegmentPair can be used
+                    // directly (avoids async SetActiveSegmentPair issues and ensures
+                    // correct soft return handling for Excel/Visio segments).
                     var segments = new List<BatchSegment>
                     {
                         new BatchSegment
@@ -2030,7 +2048,7 @@ namespace Supervertaler.Trados
                             SourceText = sourceText,
                             ExistingTarget = pair.Target != null
                                 ? SegmentTagHandler.GetFinalText(pair.Target) : "",
-                            SegmentPairRef = segRef,
+                            SegmentPairRef = pair,
                             HasTags = hasTags,
                             TagMap = hasTags ? serialization.TagMap : null
                         }

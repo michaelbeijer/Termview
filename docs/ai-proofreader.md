@@ -66,6 +66,16 @@ After a proofreading run, the Reports tab shows:
 
 Check the **"Also add issues as Trados comments"** checkbox in the Batch Operations tab (visible only in Proofread mode) before starting the run. When enabled, each issue found by the proofreader is also inserted as a Trados segment comment, so you can see the issues directly in the editor without switching to the Reports tab.
 
+## AI Context in Proofreading
+
+The AI Proofreader uses the same context sources as Batch Translate from your [AI Settings](settings/ai-settings.md):
+
+* **Document content** – when enabled, all source segments are included so the AI understands the document type and can judge whether the translation style is appropriate.
+* **Termbase terms** – terminology from enabled termbases is checked against the translations, including term definitions and domains when that option is enabled.
+* **Custom prompts** – the selected proofreading prompt provides domain-specific quality checks.
+
+TM matches and surrounding segments are **not** included in proofreading – these are Chat & QuickLauncher features only. See the [AI Settings](settings/ai-settings.md) page for a full comparison table.
+
 ## Tips
 
 ### Start with Confirmed Segments

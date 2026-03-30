@@ -39,20 +39,25 @@ namespace Supervertaler.Trados.Controls
         private TextBox _txtCustomApiKey;
         private Button _btnShowCustomKey;
 
-        // AI Context section
-        private CheckBox _chkIncludeTmMatches;
+        // AI Context section — shared (all AI features)
+        private Label _lblAiContextHeader;
         private CheckBox _chkIncludeDocumentContext;
         private Label _lblMaxSegments;
         private NumericUpDown _nudMaxSegments;
-        private Label _lblSurroundingSegments;
-        private NumericUpDown _nudSurroundingSegments;
         private CheckBox _chkIncludeTermMetadata;
         private CheckBox _chkLogPrompts;
-        private CheckedListBox _clbAiTermbases;
-        private Label _lblAiContextHeader;
         private Label _lblAiTermbases;
         private LinkLabel _lnkSelectAll;
         private LinkLabel _lnkDeselectAll;
+        private CheckedListBox _clbAiTermbases;
+
+        // AI Context section — Chat & QuickLauncher only
+        private Label _lblChatContextHeader;
+        private Label _lblChatContextNote;
+        private CheckBox _chkIncludeTmMatches;
+        private Label _lblSurroundingSegments;
+        private NumericUpDown _nudSurroundingSegments;
+
         private Label _lblInfo;
         private List<TermbaseInfo> _availableTermbases = new List<TermbaseInfo>();
 
@@ -376,31 +381,16 @@ namespace Supervertaler.Trados.Controls
             // Store base Y for dynamic repositioning
             _providerSectionY = y;
 
-            // === AI Context section ===
+            // === AI Context section — all AI features ===
             _lblAiContextHeader = new Label
             {
-                Text = "AI Context",
+                Text = "AI context (Batch operations, Chat and QuickLauncher)",
                 Font = headerFont,
                 ForeColor = Color.FromArgb(50, 50, 50),
                 Location = new Point(16, 0), // positioned dynamically
                 AutoSize = true
             };
             Controls.Add(_lblAiContextHeader);
-
-            _chkIncludeTmMatches = new CheckBox
-            {
-                Text = "Include TM matches in AI context",
-                Location = new Point(16, 0), // positioned dynamically
-                AutoSize = true,
-                ForeColor = labelColor,
-                Checked = true
-            };
-            var tmTip = new ToolTip { AutoPopDelay = 10000, InitialDelay = 300 };
-            tmTip.SetToolTip(_chkIncludeTmMatches,
-                "When enabled, Translation Memory fuzzy matches for the active segment\r\n" +
-                "are included in the AI prompt. This gives the AI reference translations\r\n" +
-                "from your TM to improve consistency and accuracy.");
-            Controls.Add(_chkIncludeTmMatches);
 
             _chkIncludeDocumentContext = new CheckBox
             {
@@ -414,7 +404,8 @@ namespace Supervertaler.Trados.Controls
             docTip.SetToolTip(_chkIncludeDocumentContext,
                 "Sends all source segments to the AI so it can determine the document type\r\n" +
                 "(legal, medical, technical, etc.) and provide context-appropriate assistance.\r\n" +
-                "Uses more tokens but greatly improves response quality.");
+                "Uses more tokens but greatly improves response quality.\r\n" +
+                "Applies to Chat, QuickLauncher, and Batch Operations.");
             _chkIncludeDocumentContext.CheckedChanged += (s, ev) =>
             {
                 _nudMaxSegments.Enabled = _chkIncludeDocumentContext.Checked;
@@ -446,31 +437,6 @@ namespace Supervertaler.Trados.Controls
                 "Documents larger than this will be truncated (first 80% + last 20%).");
             Controls.Add(_nudMaxSegments);
 
-            _lblSurroundingSegments = new Label
-            {
-                Text = "Surrounding segments:",
-                Location = new Point(36, 0), // positioned dynamically
-                AutoSize = true,
-                ForeColor = labelColor
-            };
-            Controls.Add(_lblSurroundingSegments);
-
-            _nudSurroundingSegments = new NumericUpDown
-            {
-                Location = new Point(210, 0), // positioned dynamically — label is wider than "Max segments:"
-                Width = 60,
-                Minimum = 1,
-                Maximum = 20,
-                Value = 5,
-                Increment = 1
-            };
-            var surroundingTip = new ToolTip { AutoPopDelay = 10000, InitialDelay = 300 };
-            surroundingTip.SetToolTip(_nudSurroundingSegments,
-                "Number of segments before and after the active segment to include\r\n" +
-                "in {{SURROUNDING_SEGMENTS}} QuickLauncher prompts and the AI Assistant\r\n" +
-                "chat context. Default: 5 (five segments on each side).");
-            Controls.Add(_nudSurroundingSegments);
-
             _chkIncludeTermMetadata = new CheckBox
             {
                 Text = "Include term definitions and domains",
@@ -482,7 +448,8 @@ namespace Supervertaler.Trados.Controls
             var metaTip = new ToolTip { AutoPopDelay = 10000, InitialDelay = 300 };
             metaTip.SetToolTip(_chkIncludeTermMetadata,
                 "When enabled, term definitions, domains, and notes are included\r\n" +
-                "alongside matched terminology in the AI prompt.");
+                "alongside matched terminology in the AI prompt.\r\n" +
+                "Applies to Chat, QuickLauncher, and Batch Operations.");
             Controls.Add(_chkIncludeTermMetadata);
 
             _chkLogPrompts = new CheckBox
@@ -544,7 +511,6 @@ namespace Supervertaler.Trados.Controls
             };
             Controls.Add(_lnkDeselectAll);
 
-
             _clbAiTermbases = new CheckedListBox
             {
                 Location = new Point(16, 0), // positioned dynamically
@@ -556,6 +522,69 @@ namespace Supervertaler.Trados.Controls
                 HorizontalScrollbar = true
             };
             Controls.Add(_clbAiTermbases);
+
+            // === AI Context section — Chat & QuickLauncher only ===
+            _lblChatContextHeader = new Label
+            {
+                Text = "AI context (Chat and QuickLauncher)",
+                Font = headerFont,
+                ForeColor = Color.FromArgb(50, 50, 50),
+                Location = new Point(16, 0), // positioned dynamically
+                AutoSize = true
+            };
+            Controls.Add(_lblChatContextHeader);
+
+            _lblChatContextNote = new Label
+            {
+                Text = "These settings do not apply to Batch Operations.",
+                Location = new Point(16, 0), // positioned dynamically
+                AutoSize = true,
+                ForeColor = Color.FromArgb(130, 130, 130),
+                Font = new Font("Segoe UI", 7.5f, FontStyle.Italic)
+            };
+            Controls.Add(_lblChatContextNote);
+
+            _chkIncludeTmMatches = new CheckBox
+            {
+                Text = "Include TM matches in AI context",
+                Location = new Point(16, 0), // positioned dynamically
+                AutoSize = true,
+                ForeColor = labelColor,
+                Checked = true
+            };
+            var tmTip = new ToolTip { AutoPopDelay = 10000, InitialDelay = 300 };
+            tmTip.SetToolTip(_chkIncludeTmMatches,
+                "When enabled, Translation Memory fuzzy matches for the active segment\r\n" +
+                "are included in the AI prompt. This gives the AI reference translations\r\n" +
+                "from your TM to improve consistency and accuracy.\r\n" +
+                "Only applies to Chat and QuickLauncher \u2013 not to Batch Operations.");
+            Controls.Add(_chkIncludeTmMatches);
+
+            _lblSurroundingSegments = new Label
+            {
+                Text = "Surrounding segments:",
+                Location = new Point(36, 0), // positioned dynamically
+                AutoSize = true,
+                ForeColor = labelColor
+            };
+            Controls.Add(_lblSurroundingSegments);
+
+            _nudSurroundingSegments = new NumericUpDown
+            {
+                Location = new Point(210, 0), // positioned dynamically — label is wider than "Max segments:"
+                Width = 60,
+                Minimum = 1,
+                Maximum = 20,
+                Value = 5,
+                Increment = 1
+            };
+            var surroundingTip = new ToolTip { AutoPopDelay = 10000, InitialDelay = 300 };
+            surroundingTip.SetToolTip(_nudSurroundingSegments,
+                "Number of segments before and after the active segment to include\r\n" +
+                "in {{SURROUNDING_SEGMENTS}} QuickLauncher prompts and the AI Assistant\r\n" +
+                "chat context. Default: 5 (five segments on each side).\r\n" +
+                "Only applies to Chat and QuickLauncher \u2013 not to Batch Operations.");
+            Controls.Add(_nudSurroundingSegments);
 
             // === Info label ===
             _lblInfo = new Label
@@ -598,21 +627,15 @@ namespace Supervertaler.Trados.Controls
             else
                 y += 8; // small gap after Test Connection when no provider panel
 
+            // ── Section 1: AI Context (all AI features) ──
             _lblAiContextHeader.Location = new Point(16, y);
             y += 26;
-
-            _chkIncludeTmMatches.Location = new Point(16, y);
-            y += 24;
 
             _chkIncludeDocumentContext.Location = new Point(16, y);
             y += 24;
 
             _lblMaxSegments.Location = new Point(36, y + 3);
             _nudMaxSegments.Location = new Point(160, y);
-            y += 30;
-
-            _lblSurroundingSegments.Location = new Point(36, y + 3);
-            _nudSurroundingSegments.Location = new Point(210, y);
             y += 30;
 
             _chkIncludeTermMetadata.Location = new Point(16, y);
@@ -627,7 +650,21 @@ namespace Supervertaler.Trados.Controls
             y += 20;
 
             _clbAiTermbases.Location = new Point(16, y);
-            y += _clbAiTermbases.Height + 8;
+            y += _clbAiTermbases.Height + 12;
+
+            // ── Section 2: AI Context (Chat & QuickLauncher only) ──
+            _lblChatContextHeader.Location = new Point(16, y);
+            y += 22;
+
+            _lblChatContextNote.Location = new Point(16, y);
+            y += 20;
+
+            _chkIncludeTmMatches.Location = new Point(16, y);
+            y += 24;
+
+            _lblSurroundingSegments.Location = new Point(36, y + 3);
+            _nudSurroundingSegments.Location = new Point(210, y);
+            y += 34;
 
             _lblInfo.Location = new Point(16, y);
         }

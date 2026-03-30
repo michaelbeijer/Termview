@@ -21,7 +21,9 @@ namespace Supervertaler.Trados.Core
         /// <param name="terms">Optional termbase terms to check against</param>
         /// <param name="customPromptContent">Optional custom prompt content (already variable-substituted)</param>
         public static string BuildSystemPrompt(string sourceLang, string targetLang,
-            List<TermEntry> terms = null, string customPromptContent = null)
+            List<TermEntry> terms = null, string customPromptContent = null,
+            List<string> documentSegments = null, int maxDocumentSegments = 500,
+            bool includeTermMetadata = true)
         {
             var sb = new StringBuilder(4096);
 
@@ -84,6 +86,17 @@ namespace Supervertaler.Trados.Core
                     else
                         sb.AppendLine("- " + term.SourceTerm + " \u2192 " + term.TargetTerm);
 
+                    // Include term metadata (domain, definition, notes)
+                    if (includeTermMetadata)
+                    {
+                        if (!string.IsNullOrWhiteSpace(term.Domain))
+                            sb.Append("  Domain: ").AppendLine(term.Domain);
+                        if (!string.IsNullOrWhiteSpace(term.Definition))
+                            sb.Append("  Definition: ").AppendLine(term.Definition);
+                        if (!string.IsNullOrWhiteSpace(term.Notes))
+                            sb.Append("  Notes: ").AppendLine(term.Notes);
+                    }
+
                     if (!string.IsNullOrEmpty(term.SourceAbbreviation) && !string.IsNullOrEmpty(term.TargetAbbreviation))
                         sb.AppendLine("- " + term.SourceAbbreviation + " \u2192 " + term.TargetAbbreviation + " (abbreviation of: " + term.SourceTerm + ")");
                 }
@@ -97,6 +110,49 @@ namespace Supervertaler.Trados.Core
                 sb.AppendLine("# CUSTOM INSTRUCTIONS");
                 sb.AppendLine();
                 sb.Append(customPromptContent);
+            }
+
+            // Document context (all source segments for document type analysis)
+            if (documentSegments != null && documentSegments.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine();
+                sb.AppendLine("# DOCUMENT CONTENT");
+                sb.AppendLine("The following is the source document content. Analyze it to determine the document type");
+                sb.AppendLine("(legal, medical, technical, marketing, financial, patent, scientific, etc.) and use that");
+                sb.AppendLine("assessment to inform your quality judgements about terminology, style, and register.");
+                sb.AppendLine();
+
+                var max = maxDocumentSegments > 0 ? maxDocumentSegments : 500;
+
+                if (documentSegments.Count <= max)
+                {
+                    for (int i = 0; i < documentSegments.Count; i++)
+                    {
+                        sb.Append(i + 1).Append(". ").AppendLine(documentSegments[i]);
+                    }
+                }
+                else
+                {
+                    int firstCount = (int)(max * 0.8);
+                    int lastCount = max - firstCount;
+                    int omitted = documentSegments.Count - max;
+
+                    for (int i = 0; i < firstCount; i++)
+                    {
+                        sb.Append(i + 1).Append(". ").AppendLine(documentSegments[i]);
+                    }
+
+                    sb.AppendLine();
+                    sb.Append("[... ").Append(omitted).AppendLine(" segments omitted ...]");
+                    sb.AppendLine();
+
+                    int startLast = documentSegments.Count - lastCount;
+                    for (int i = startLast; i < documentSegments.Count; i++)
+                    {
+                        sb.Append(i + 1).Append(". ").AppendLine(documentSegments[i]);
+                    }
+                }
             }
 
             return sb.ToString().TrimEnd();

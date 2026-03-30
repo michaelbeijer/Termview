@@ -65,6 +65,16 @@ Ctrl+T is also available via right-click in the editor ("Translate active segmen
 3. The translation is written directly into the target cell
 4. Inline tags (bold, italic, field codes, etc.) are preserved in the translation
 
+## AI Context in Batch Translate
+
+Batch Translate uses several context sources from your [AI Settings](settings/ai-settings.md) to improve translation quality:
+
+* **Document content** – when enabled, all source segments are included in the system prompt so the AI can determine the document type (legal, medical, technical, etc.) and adapt its style accordingly. This is shared across all batches.
+* **Termbase terms** – terminology from enabled termbases is injected into the prompt, including term definitions and domains when that option is enabled.
+* **Custom prompts** – the selected prompt provides domain-specific translation instructions.
+
+TM matches and surrounding segments are **not** included in Batch Translate – these are Chat & QuickLauncher features only. See the [AI Settings](settings/ai-settings.md) page for a full comparison table.
+
 ## Tips
 
 ### Translate Empty Segments First

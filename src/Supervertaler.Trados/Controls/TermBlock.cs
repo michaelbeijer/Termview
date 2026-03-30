@@ -49,6 +49,24 @@ namespace Supervertaler.Trados.Controls
         public event EventHandler<TermEditEventArgs> TermDeleteRequested;
         public event EventHandler<TermEditEventArgs> TermNonTranslatableToggled;
 
+        /// <summary>
+        /// Maximum width in pixels. When set, the block clamps to this width
+        /// and long source/target text is truncated with an ellipsis.
+        /// 0 = no limit (default).
+        /// </summary>
+        private int _maxWidth;
+        public int MaxWidth
+        {
+            get => _maxWidth;
+            set
+            {
+                if (_maxWidth == value) return;
+                _maxWidth = value;
+                CalculateSize();
+                Invalidate();
+            }
+        }
+
         public TermBlock(string sourceText, List<TermEntry> entries, int shortcutIndex = -1,
             bool isProjectTermbase = false, bool isNonTranslatable = false, bool isMultiTerm = false,
             HashSet<long> abbreviationMatchIds = null)
@@ -240,6 +258,8 @@ namespace Supervertaler.Trados.Controls
 
                 int targetRowWidth = (int)Math.Ceiling(targetSize.Width) + extraWidth + badgeWidth + 10;
                 int width = (int)Math.Ceiling(Math.Max(sourceSize.Width + 10, targetRowWidth));
+                if (MaxWidth > 0 && width > MaxWidth)
+                    width = MaxWidth;
                 int height = (int)Math.Ceiling(sourceSize.Height + targetSize.Height) + 8;
 
                 Size = new Size(width, Math.Max(height, 28));
@@ -263,12 +283,14 @@ namespace Supervertaler.Trados.Controls
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            // Source text — plain, no background
+            // Source text — plain, no background (ellipsis if clamped)
             float y = 3;
             var sourceHeight = g.MeasureString(_sourceText, SourceFont).Height;
             using (var brush = new SolidBrush(Color.FromArgb(40, 40, 40)))
+            using (var sf = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap })
             {
-                g.DrawString(_sourceText, SourceFont, brush, 4, y);
+                var sourceRect = new RectangleF(4, y, Width - 8, sourceHeight);
+                g.DrawString(_sourceText, SourceFont, brush, sourceRect, sf);
             }
             y += sourceHeight;
 
@@ -303,12 +325,16 @@ namespace Supervertaler.Trados.Controls
                 g.FillPath(brush, path);
             }
 
-            // Target text
+            // Target text (ellipsis if clamped)
             float targetX = 4;
+            float maxTargetTextWidth = Width - 8 - extraWidth - badgeWidth;
             using (var brush = new SolidBrush(Color.FromArgb(20, 20, 20)))
+            using (var sf = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap })
             {
-                g.DrawString(targetText, TargetFont, brush, targetX, y);
-                targetX += targetSize.Width;
+                float drawWidth = Math.Min(targetSize.Width, maxTargetTextWidth);
+                var textRect = new RectangleF(targetX, y, drawWidth, targetSize.Height);
+                g.DrawString(targetText, TargetFont, brush, textRect, sf);
+                targetX += drawWidth;
             }
 
             // "+N" indicator for multiple translations
