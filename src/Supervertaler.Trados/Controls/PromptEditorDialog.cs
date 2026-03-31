@@ -268,7 +268,7 @@ namespace Supervertaler.Trados.Controls
                 _btnOK.Enabled = false;
                 Text += " (read-only)";
             }
-            else if (_prompt.IsBuiltIn)
+            else if (_prompt.IsDefault)
             {
                 // Built-in prompts: content is immutable, but visibility can be changed.
                 // To modify content, use Clone.
@@ -295,7 +295,7 @@ namespace Supervertaler.Trados.Controls
         {
             // Built-in prompts: only the hidden checkbox is editable,
             // so only update that field and leave everything else untouched.
-            if (_prompt.IsBuiltIn)
+            if (_prompt.IsDefault)
             {
                 if (_chkShowInMenu.Visible)
                     _prompt.HiddenFromMenu = !_chkShowInMenu.Checked;

@@ -47,28 +47,28 @@ namespace Supervertaler.Trados.Core
             if (Directory.Exists(PromptsDir))
                 ScanDirectory(PromptsDir, PromptsDir, isReadOnly: false);
 
-            // Mark prompts that match built-in definitions as IsBuiltIn,
+            // Mark prompts that match default definitions as IsDefault,
             // even if the file on disk was created by Workbench without that flag.
             // Only match prompts that are in a Default subfolder (or whose domain
-            // matches the built-in domain exactly) to avoid marking user clones.
-            var builtInLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var b in GetBuiltInPromptDefinitions())
-                builtInLookup[b.Name] = b.Category ?? "";
+            // matches the default domain exactly) to avoid marking user clones.
+            var defaultLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var b in GetDefaultPromptDefinitions())
+                defaultLookup[b.Name] = b.Category ?? "";
             foreach (var p in _cache)
             {
-                string builtInCategory;
-                if (builtInLookup.TryGetValue(p.Name, out builtInCategory))
+                string defaultCategory;
+                if (defaultLookup.TryGetValue(p.Name, out defaultCategory))
                 {
                     // Match if the prompt is in the expected Default domain,
                     // or if its file is inside a "Default" or legacy "Built-in" folder
                     var pCategory = p.Category ?? "";
-                    if (pCategory.Equals(builtInCategory, StringComparison.OrdinalIgnoreCase) ||
+                    if (pCategory.Equals(defaultCategory, StringComparison.OrdinalIgnoreCase) ||
                         pCategory.IndexOf("Default", StringComparison.OrdinalIgnoreCase) >= 0 ||
                         pCategory.IndexOf("Built-in", StringComparison.OrdinalIgnoreCase) >= 0 ||
                         (p.FilePath ?? "").IndexOf(Path.DirectorySeparatorChar + "Default" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) >= 0 ||
                         (p.FilePath ?? "").IndexOf(Path.DirectorySeparatorChar + "Built-in" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        p.IsBuiltIn = true;
+                        p.IsDefault = true;
                     }
                 }
             }
@@ -318,8 +318,8 @@ namespace Supervertaler.Trados.Core
                 filePath = prompt.FilePath;
 
                 // If the prompt was renamed, update the filename to match.
-                // Skip for built-in prompts — their filenames are managed by EnsureBuiltInPrompts.
-                if (!prompt.IsBuiltIn)
+                // Skip for default prompts — their filenames are managed by EnsureDefaultPrompts.
+                if (!prompt.IsDefault)
                 {
                     var currentFileName = Path.GetFileNameWithoutExtension(filePath);
                     var expectedFileName = SanitizeFileName(prompt.Name);
@@ -368,8 +368,8 @@ namespace Supervertaler.Trados.Core
             if (!string.IsNullOrEmpty(prompt.App) &&
                 !prompt.App.Equals("both", StringComparison.OrdinalIgnoreCase))
                 sb.AppendLine("app: \"" + EscapeYamlString(prompt.App) + "\"");
-            if (prompt.IsBuiltIn)
-                sb.AppendLine("built_in: true");
+            if (prompt.IsDefault)
+                sb.AppendLine("default: true");
             if (prompt.SortOrder != 100)
                 sb.AppendLine("sort_order: " + prompt.SortOrder);
             if (prompt.HiddenFromMenu)
@@ -422,10 +422,10 @@ namespace Supervertaler.Trados.Core
         /// <summary>
         /// Ensures built-in prompts exist in the prompts directory.
         /// Creates any that are missing (idempotent — safe to call on every startup).
-        /// Also removes domain-specific translate prompts that were shipped in v4.12.x
-        /// but replaced by the single Default Translation Prompt in v4.13.0.
+        /// Also removes domain-specific translate prompts shipped in v4.12.x
+        /// and replaced by the single Default Translation Prompt in v4.13.0.
         /// </summary>
-        public void EnsureBuiltInPrompts()
+        public void EnsureDefaultPrompts()
         {
             Directory.CreateDirectory(PromptsDir);
 
@@ -435,20 +435,20 @@ namespace Supervertaler.Trados.Core
             // Clean up domain-specific translate prompts removed in v4.13.0
             CleanUpRetiredPrompts();
 
-            foreach (var builtin in GetBuiltInPromptDefinitions())
+            foreach (var def in GetDefaultPromptDefinitions())
             {
-                // builtin.Category is now e.g. "QuickLauncher/Default"
-                var folder = string.IsNullOrEmpty(builtin.Category)
+                // def.Category is now e.g. "QuickLauncher/Default"
+                var folder = string.IsNullOrEmpty(def.Category)
                     ? PromptsDir
-                    : Path.Combine(PromptsDir, builtin.Category.Replace('/', Path.DirectorySeparatorChar));
+                    : Path.Combine(PromptsDir, def.Category.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(folder);
 
-                var sanitisedName = SanitizeFileName(builtin.Name);
+                var sanitisedName = SanitizeFileName(def.Name);
 
                 // ─── Migration: move files from old locations to Default subfolder ───
                 // Handles both the original flat layout (e.g. "QuickLauncher/Define.md")
                 // and the intermediate "Built-in" subfolder (e.g. "QuickLauncher/Built-in/Define.md").
-                var domainParts = builtin.Category.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                var domainParts = def.Category.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
                 if (domainParts.Length >= 2 && domainParts[domainParts.Length - 1].Equals("Default", StringComparison.OrdinalIgnoreCase))
                 {
                     var newMdPath = Path.Combine(folder, sanitisedName + ".md");
@@ -477,7 +477,7 @@ namespace Supervertaler.Trados.Core
                             try
                             {
                                 var content = File.ReadAllText(sourcePath);
-                                if (content.Contains("built_in: true"))
+                                if (IsDefaultPromptFile(content))
                                     File.Move(sourcePath, newMdPath);
                             }
                             catch { /* ignore — file locked or permissions */ }
@@ -488,7 +488,7 @@ namespace Supervertaler.Trados.Core
                 // ─── Migration: move "Text operations" from QuickLauncher/ to Default/ ───
                 // v4.18.27 shipped with category "QuickLauncher/Text operations"; v4.18.28+
                 // uses "QuickLauncher/Default/Text operations" so it groups with other defaults.
-                if (builtin.Category.StartsWith("QuickLauncher/Default/Text operations",
+                if (def.Category.StartsWith("QuickLauncher/Default/Text operations",
                     StringComparison.OrdinalIgnoreCase))
                 {
                     var newPath = Path.Combine(folder, sanitisedName + ".md");
@@ -499,7 +499,7 @@ namespace Supervertaler.Trados.Core
                         try
                         {
                             var content = File.ReadAllText(oldPath);
-                            if (content.Contains("built_in: true"))
+                            if (IsDefaultPromptFile(content))
                             {
                                 Directory.CreateDirectory(folder);
                                 File.Move(oldPath, newPath);
@@ -523,7 +523,7 @@ namespace Supervertaler.Trados.Core
                 // segment from?" → sanitised "from_" vs old "from" without the '?').
                 // Only delete the old file if the correctly sanitised version exists
                 // and the old file is still marked as built-in.
-                var strippedName = builtin.Name.TrimEnd('?', '!', '.', '_');
+                var strippedName = def.Name.TrimEnd('?', '!', '.', '_');
                 if (!string.Equals(sanitisedName, strippedName, StringComparison.OrdinalIgnoreCase))
                 {
                     var sanitisedPath = Path.Combine(folder, sanitisedName + ".md");
@@ -533,21 +533,21 @@ namespace Supervertaler.Trados.Core
                         try
                         {
                             var oldContent = File.ReadAllText(strippedPath);
-                            if (oldContent.Contains("built_in: true"))
+                            if (IsDefaultPromptFile(oldContent))
                                 File.Delete(strippedPath);
                         }
                         catch { /* ignore — file locked or permissions */ }
                     }
                 }
 
-                // Clean up old .svprompt version if it's still a built-in (not user-modified)
+                // Clean up old .svprompt version if it's still a default prompt (not user-modified)
                 var oldSvpromptPath = Path.Combine(folder, sanitisedName + ".svprompt");
                 if (File.Exists(oldSvpromptPath))
                 {
                     try
                     {
                         var oldContent = File.ReadAllText(oldSvpromptPath);
-                        if (oldContent.Contains("built_in: true"))
+                        if (IsDefaultPromptFile(oldContent))
                             File.Delete(oldSvpromptPath);
                     }
                     catch { /* ignore — file locked or permissions */ }
@@ -558,20 +558,20 @@ namespace Supervertaler.Trados.Core
                 {
                     var sb = new StringBuilder();
                     sb.AppendLine("---");
-                    sb.AppendLine("type: " + (builtin.IsTransform ? "transform" : "prompt"));
-                    sb.AppendLine("name: \"" + EscapeYamlString(builtin.Name) + "\"");
-                    if (!string.IsNullOrEmpty(builtin.Description))
-                        sb.AppendLine("description: \"" + EscapeYamlString(builtin.Description) + "\"");
-                    if (!string.IsNullOrEmpty(builtin.Category))
-                        sb.AppendLine("category: \"" + EscapeYamlString(builtin.Category) + "\"");
-                    if (builtin.SortOrder != 100)
-                        sb.AppendLine("sort_order: " + builtin.SortOrder);
-                    sb.AppendLine("built_in: true");
+                    sb.AppendLine("type: " + (def.IsTransform ? "transform" : "prompt"));
+                    sb.AppendLine("name: \"" + EscapeYamlString(def.Name) + "\"");
+                    if (!string.IsNullOrEmpty(def.Description))
+                        sb.AppendLine("description: \"" + EscapeYamlString(def.Description) + "\"");
+                    if (!string.IsNullOrEmpty(def.Category))
+                        sb.AppendLine("category: \"" + EscapeYamlString(def.Category) + "\"");
+                    if (def.SortOrder != 100)
+                        sb.AppendLine("sort_order: " + def.SortOrder);
+                    sb.AppendLine("default: true");
                     sb.AppendLine("---");
-                    if (!string.IsNullOrEmpty(builtin.Content))
+                    if (!string.IsNullOrEmpty(def.Content))
                     {
                         sb.AppendLine();
-                        sb.Append(builtin.Content);
+                        sb.Append(def.Content);
                     }
 
                     File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
@@ -584,7 +584,7 @@ namespace Supervertaler.Trados.Core
 
         /// <summary>
         /// Removes domain-specific translate prompts that were shipped in v4.12.x.
-        /// Only deletes files that still contain "built_in: true" — user-modified copies are left alone.
+        /// Only deletes files still marked as default — user-modified copies are left alone.
         /// </summary>
         private void CleanUpRetiredPrompts()
         {
@@ -612,7 +612,7 @@ namespace Supervertaler.Trados.Core
                         try
                         {
                             var content = File.ReadAllText(filePath);
-                            if (content.Contains("built_in: true"))
+                            if (IsDefaultPromptFile(content))
                                 File.Delete(filePath);
                         }
                         catch { /* ignore */ }
@@ -636,7 +636,7 @@ namespace Supervertaler.Trados.Core
                     try
                     {
                         var content = File.ReadAllText(path);
-                        if (content.Contains("built_in: true"))
+                        if (IsDefaultPromptFile(content))
                             File.Delete(path);
                     }
                     catch { /* ignore */ }
@@ -671,18 +671,18 @@ namespace Supervertaler.Trados.Core
         }
 
         /// <summary>
-        /// Restores all built-in prompts (overwrites any user edits).
+        /// Restores all default prompts (overwrites any user edits).
         /// </summary>
-        public void RestoreBuiltInPrompts()
+        public void RestoreDefaultPrompts()
         {
-            foreach (var builtin in GetBuiltInPromptDefinitions())
+            foreach (var def in GetDefaultPromptDefinitions())
             {
-                var folder = string.IsNullOrEmpty(builtin.Category)
+                var folder = string.IsNullOrEmpty(def.Category)
                     ? PromptsDir
-                    : Path.Combine(PromptsDir, builtin.Category.Replace('/', Path.DirectorySeparatorChar));
+                    : Path.Combine(PromptsDir, def.Category.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(folder);
 
-                var sanitisedName = SanitizeFileName(builtin.Name);
+                var sanitisedName = SanitizeFileName(def.Name);
 
                 // Clean up old .svprompt version
                 var oldSvpromptPath = Path.Combine(folder, sanitisedName + ".svprompt");
@@ -696,15 +696,15 @@ namespace Supervertaler.Trados.Core
                 var sb = new StringBuilder();
                 sb.AppendLine("---");
                 sb.AppendLine("type: prompt");
-                sb.AppendLine("name: \"" + EscapeYamlString(builtin.Name) + "\"");
-                if (!string.IsNullOrEmpty(builtin.Description))
-                    sb.AppendLine("description: \"" + EscapeYamlString(builtin.Description) + "\"");
-                if (!string.IsNullOrEmpty(builtin.Category))
-                    sb.AppendLine("category: \"" + EscapeYamlString(builtin.Category) + "\"");
-                sb.AppendLine("built_in: true");
+                sb.AppendLine("name: \"" + EscapeYamlString(def.Name) + "\"");
+                if (!string.IsNullOrEmpty(def.Description))
+                    sb.AppendLine("description: \"" + EscapeYamlString(def.Description) + "\"");
+                if (!string.IsNullOrEmpty(def.Category))
+                    sb.AppendLine("category: \"" + EscapeYamlString(def.Category) + "\"");
+                sb.AppendLine("default: true");
                 sb.AppendLine("---");
                 sb.AppendLine();
-                sb.Append(builtin.Content);
+                sb.Append(def.Content);
 
                 File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
             }
@@ -713,6 +713,16 @@ namespace Supervertaler.Trados.Core
         }
 
         // ─── Private Methods ─────────────────────────────────────────
+
+        /// <summary>
+        /// Returns true when the raw file content marks the prompt as a default
+        /// (shipped) prompt. Accepts both the current "default: true" YAML field
+        /// and the legacy "built_in: true" field for backward compatibility.
+        /// </summary>
+        private static bool IsDefaultPromptFile(string content)
+        {
+            return content.Contains("default: true") || content.Contains("built_in: true");
+        }
 
         private void ScanDirectory(string dir, string rootDir, bool isReadOnly)
         {
@@ -944,8 +954,9 @@ namespace Supervertaler.Trados.Core
                         // Unified schema: "workbench", "trados", or "both"
                         prompt.App = value.ToLowerInvariant();
                         break;
-                    case "built_in":
-                        prompt.IsBuiltIn = value.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    case "default":
+                    case "built_in":   // backward compat (pre-v4.18.4)
+                        prompt.IsDefault = value.Equals("true", StringComparison.OrdinalIgnoreCase);
                         break;
                     case "quickmenu":       // unified schema
                     case "sv_quickmenu":    // backward compatibility (Workbench legacy)
@@ -1077,7 +1088,7 @@ namespace Supervertaler.Trados.Core
 
         // ─── Built-in Prompt Definitions ──────────────────────────────
 
-        private List<PromptTemplate> GetBuiltInPromptDefinitions()
+        private List<PromptTemplate> GetDefaultPromptDefinitions()
         {
             return new List<PromptTemplate>
             {
@@ -1087,7 +1098,7 @@ namespace Supervertaler.Trados.Core
                     Name = "Default Translation Prompt",
                     Description = "General-purpose translation prompt — use as-is or as a starting point for your own prompts",
                     Category = "Translate/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"You are a professional translator working from {{SOURCE_LANGUAGE}} to {{TARGET_LANGUAGE}}. Translate the source text accurately and naturally, following these guidelines:
 
 ## Core principles
@@ -1113,7 +1124,7 @@ namespace Supervertaler.Trados.Core
                     Name = "Default Proofreading Prompt",
                     Description = "Reviews translations for accuracy, completeness, terminology, grammar, and style issues",
                     Category = "Proofread/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"You are a professional translation proofreader. Your task is to review {{SOURCE_LANGUAGE}} to {{TARGET_LANGUAGE}} translation pairs and identify issues. You must check EVERY segment provided — do not skip any.
 
 For each segment, check the following:
@@ -1186,7 +1197,7 @@ IMPORTANT RULES:
                     Name = "UK to US English Localization",
                     Description = "Flags British English spelling, vocabulary, and conventions that need changing to American English",
                     Category = "Proofread/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"You are a professional English localizer specializing in adapting British English (BrE) text to American English (AmE). Your task is to review each segment and flag any British English forms that should be changed to their American English equivalents.
 
 IMPORTANT: This is a linguistic localization check only. Do NOT flag style, tone, sentence structure, readability, or rewriting suggestions. Only flag words, spellings, and conventions that differ between British and American English.
@@ -1278,7 +1289,7 @@ IMPORTANT RULES:
                     Name = "Assess how I translated the current segment",
                     Description = "Reviews your translation of the active segment and suggests improvements",
                     Category = "QuickLauncher/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"Source ({{SOURCE_LANGUAGE}}):
 {{SOURCE_TEXT}}
 
@@ -1292,14 +1303,14 @@ Assess how I translated the current segment. Point out any inaccuracies, awkward
                     Name = "Define",
                     Description = "Defines the selected term and provides usage examples",
                     Category = "QuickLauncher/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"Define ""{{SELECTION}}"" and give practical examples showing how it's used."
                 },
                 new PromptTemplate
                 {
                     Name = "Explain selection (in general)",
                     Category = "QuickLauncher/Default/Explain",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"Explain ""{{SELECTION}}"" in simple, clear language. Include a practical example if helpful."
                 },
                 new PromptTemplate
@@ -1307,7 +1318,7 @@ Assess how I translated the current segment. Point out any inaccuracies, awkward
                     Name = "Explain selection (within context of surrounding segments)",
                     Description = "This is a much lighter version than the original, which sends the entire document source text.",
                     Category = "QuickLauncher/Default/Explain",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"PROJECT CONTEXT - The surrounding segments from the current translation project:
 
 {{SURROUNDING_SEGMENTS}}
@@ -1321,7 +1332,7 @@ Explain ""{{SELECTION}}"" in simple, clear language. If the project context abov
                     Name = "Explain selection (within full project context)",
                     Description = "Explains the selection using the full document as context",
                     Category = "QuickLauncher/Default/Explain",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"PROJECT CONTEXT - The complete source text from the current translation project:
 
 {{PROJECT}}
@@ -1335,7 +1346,7 @@ Explain ""{{SELECTION}}"" in simple, clear language. If the project context abov
                     Name = "Show current filename",
                     Description = "Displays the filename of the file you are currently translating",
                     Category = "QuickLauncher/Default/Files",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"Simply reply with the filename below and nothing else:
 
 {{DOCUMENT_NAME}}"
@@ -1345,7 +1356,7 @@ Explain ""{{SELECTION}}"" in simple, clear language. If the project context abov
                     Name = "What file is this segment from?",
                     Description = "Shows the filename and project context for the current segment",
                     Category = "QuickLauncher/Default/Files",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"The current segment is from the file ""{{DOCUMENT_NAME}}"" in the project ""{{PROJECT_NAME}}"".
 
 Source ({{SOURCE_LANGUAGE}}):
@@ -1358,7 +1369,7 @@ What type of file is this, and what can you tell me about it based on the filena
                     Name = "Translate segment using fuzzy matches as reference",
                     Description = "Translates the active segment, using TM fuzzy matches and surrounding context",
                     Category = "QuickLauncher/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"Translate the following from {{SOURCE_LANGUAGE}} to {{TARGET_LANGUAGE}}.
 
 Source: {{SOURCE_SEGMENT}}
@@ -1376,7 +1387,7 @@ Use the fuzzy matches and surrounding context as reference, but produce a fresh,
                     Name = "Translate selection in context of current project",
                     Description = "Suggests the best translation for a selected term using full document context",
                     Category = "QuickLauncher/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"PROJECT CONTEXT - The complete source text of the current translation project:
 
 {{PROJECT}}
@@ -1390,7 +1401,7 @@ Using the project context above, suggest the best translation for ""{{SELECTION}
                     Name = "Generate project brief",
                     Description = "Generates a comprehensive project summary in Markdown that you can paste into any AI tool for context while translating",
                     Category = "QuickLauncher/Default",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     Content = @"You are a senior translation project analyst. Your job is to produce a comprehensive briefing document that a professional translator (or an AI assistant helping a translator) can use as reference material throughout an entire translation project.
 
 The briefing will be used as context when pasting into AI chat interfaces (Claude, ChatGPT, Gemini, etc.) to ask questions while translating.
@@ -1454,7 +1465,7 @@ Format the entire output as a single Markdown document that can be copied and pa
                     Description = "Removes invisible Unicode LINE SEPARATOR (U+2028) and PARAGRAPH SEPARATOR (U+2029) characters from the target segment, replacing them with spaces",
                     Category = "QuickLauncher/Default/Text operations",
                     Type = "transform",
-                    IsBuiltIn = true,
+                    IsDefault = true,
                     SortOrder = 10,
                     Content = @"# Strip invisible Unicode line/paragraph separators.
 # These are commonly inserted by InDesign (IDML) as forced line breaks

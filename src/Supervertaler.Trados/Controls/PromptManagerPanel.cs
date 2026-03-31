@@ -141,8 +141,8 @@ namespace Supervertaler.Trados.Controls
             _btnDelete.Click += OnDeletePrompt;
 
             _btnRestore = CreateToolbarButton("Restore", 65);
-            _btnRestore.Click += OnRestoreBuiltIn;
-            _toolTip.SetToolTip(_btnRestore, "Restore all built-in prompts to their defaults");
+            _btnRestore.Click += OnRestoreDefaults;
+            _toolTip.SetToolTip(_btnRestore, "Restore all default prompts to their original state");
 
             _btnNewFolder = CreateToolbarButton("New Folder", 90);
             _btnNewFolder.Click += OnNewFolder;
@@ -859,8 +859,8 @@ namespace Supervertaler.Trados.Controls
                     Tag = prompt
                 };
 
-                // Muted for built-in or hidden, dark for custom
-                node.ForeColor = (prompt.IsBuiltIn || prompt.HiddenFromMenu)
+                // Muted for default or hidden, dark for custom
+                node.ForeColor = (prompt.IsDefault || prompt.HiddenFromMenu)
                     ? Color.FromArgb(80, 80, 80)
                     : Color.FromArgb(30, 30, 30);
 
@@ -955,7 +955,7 @@ namespace Supervertaler.Trados.Controls
         {
             _lblPromptName.Text = prompt.Name;
 
-            var source = prompt.IsReadOnly ? "Supervertaler" : (prompt.IsBuiltIn ? "Default" : "Custom");
+            var source = prompt.IsReadOnly ? "Supervertaler" : (prompt.IsDefault ? "Default" : "Custom");
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(prompt.Category))
                 parts.Add(prompt.Category);
@@ -1273,7 +1273,7 @@ namespace Supervertaler.Trados.Controls
                 _aiSettings.QuickLauncherFlatFolders.Add(folderPath);
         }
 
-        private void OnRestoreBuiltIn(object sender, EventArgs e)
+        private void OnRestoreDefaults(object sender, EventArgs e)
         {
             var result = MessageBox.Show(
                 "Restore all default prompts?\n\nThis will overwrite any edits to default prompts and re-create deleted ones.",
@@ -1282,7 +1282,7 @@ namespace Supervertaler.Trados.Controls
 
             if (result == DialogResult.Yes)
             {
-                _library.RestoreBuiltInPrompts();
+                _library.RestoreDefaultPrompts();
                 RefreshTree();
             }
         }

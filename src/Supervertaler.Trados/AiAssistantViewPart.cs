@@ -89,7 +89,7 @@ namespace Supervertaler.Trados
             // so users can open Settings → License to activate.
             _settings = TermLensSettings.Load();
             _promptLibrary = TermLensEditorViewPart.GetPromptLibrary() ?? new PromptLibrary();
-            _promptLibrary.EnsureBuiltInPrompts();
+            _promptLibrary.EnsureDefaultPrompts();
             _control.Value.SettingsRequested += OnSettingsRequested;
 
             if (!LicenseManager.Instance.HasTier2Access)

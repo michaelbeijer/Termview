@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.18.29] — 2026-03-31
+
+### Changed
+- **`built_in` YAML field renamed to `default`** – prompt files now use `default: true` instead of `built_in: true`; the old field name is still accepted for backward compatibility; all internal C# naming updated accordingly (`IsBuiltIn` → `IsDefault`, `EnsureBuiltInPrompts` → `EnsureDefaultPrompts`, etc.)
+
+---
+
 ## [4.18.28] — 2026-03-31
 
 ### Fixed

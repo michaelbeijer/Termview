@@ -22,7 +22,7 @@ You are an expert {{SOURCE_LANGUAGE}} to {{TARGET_LANGUAGE}} patent translator..
 | `description`         | Optional summary                                                                 |
 | `category`            | `Translate`, `Proofread`, or `QuickLauncher` — controls where the prompt appears |
 | `quicklauncher_label` | Short label for the QuickLauncher menu (optional, falls back to `name`)          |
-| `built_in`            | `true` for shipped prompts (managed by the plugin)                               |
+| `default`             | `true` for shipped prompts (managed by the plugin)                               |
 | `sort_order`          | Numeric order within folder (lower values first). Set automatically by the ▲/▼ buttons. |
 
 {% hint style="info" %}

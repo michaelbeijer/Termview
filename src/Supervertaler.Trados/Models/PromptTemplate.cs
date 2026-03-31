@@ -40,7 +40,7 @@ namespace Supervertaler.Trados.Models
         public string RelativePath { get; set; } = "";
 
         /// <summary>True if this prompt was shipped with the plugin (can be restored if deleted).</summary>
-        public bool IsBuiltIn { get; set; }
+        public bool IsDefault { get; set; }
 
         /// <summary>True if this prompt is read-only (e.g. from a shared folder).</summary>
         public bool IsReadOnly { get; set; }

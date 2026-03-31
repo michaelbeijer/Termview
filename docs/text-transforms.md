@@ -84,7 +84,7 @@ type: transform
 name: "Strip U+2028"
 description: "Removes invisible Unicode LINE SEPARATOR and PARAGRAPH SEPARATOR"
 category: "QuickLauncher/Text operations"
-built_in: true
+default: true
 ---
 
 # Strip invisible Unicode line/paragraph separators.

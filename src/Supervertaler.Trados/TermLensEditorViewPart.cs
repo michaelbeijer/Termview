@@ -132,9 +132,9 @@ namespace Supervertaler.Trados
             // Apply global UI scale factor before any controls are created
             UiScale.Factor = _settings.UiScaleFactor;
 
-            // Initialize prompt library and seed built-in prompts on first run
+            // Initialize prompt library and seed default prompts on first run
             _promptLibrary = new PromptLibrary();
-            _promptLibrary.EnsureBuiltInPrompts();
+            _promptLibrary.EnsureDefaultPrompts();
 
             // Wire up the gear/settings button — must be done even when
             // unlicensed so users can open Settings → License to activate.
