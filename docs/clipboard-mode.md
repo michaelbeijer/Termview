@@ -5,8 +5,10 @@ You are viewing help for **Supervertaler for Trados** — the Trados Studio plug
 Clipboard Mode lets you translate or proofread segments using **any web-based AI** — ChatGPT, Claude, Gemini, DeepSeek, or any other LLM with a chat interface — without needing an API key. Instead of sending segments to an AI provider via API, Supervertaler builds a ready-to-use prompt and copies it to your clipboard. You paste it into the AI of your choice, copy the response, and paste it back.
 
 {% hint style="success" %}
-Clipboard Mode is ideal if you want to use a model that is not available via API, if you prefer a pay-as-you-go chat subscription, or if you simply want to try AI translation without setting up API credentials first.
+**No API key? No problem.** Clipboard Mode is the fastest way to start using AI translation in Supervertaler for Trados. If you already have access to a web-based AI chat — and most people do these days — you can start translating immediately after installing the plugin. No API keys, no provider configuration, no per-token billing. Just tick Clipboard Mode, copy, paste, and translate.
 {% endhint %}
+
+Clipboard Mode is also ideal if you want to use a model that is not available via API, if you prefer a pay-as-you-go chat subscription, or if you want to try different AI models before committing to a specific provider's API.
 
 ## How It Works
 
@@ -120,12 +122,17 @@ Most web-based AI chat interfaces have a context limit that determines how many 
 | | Clipboard Mode | API Mode |
 |---|---|---|
 | **API key required** | No | Yes |
+| **Setup time** | None – works immediately | Requires provider account and API key |
 | **Cost** | Included in your AI chat subscription | Pay-per-token via API |
 | **Automation** | Manual copy/paste | Fully automatic |
 | **Model choice** | Any web-based LLM | OpenAI, Anthropic, Google, Ollama |
-| **Best for** | Quick jobs, trying new models, no API setup | Large projects, automation, batch processing |
+| **Best for** | Getting started, quick jobs, trying new models | Large projects, automation, batch processing |
 
 Both modes use the same prompts, terminology, document context, and tag handling — the only difference is how the text gets to and from the AI.
+
+{% hint style="info" %}
+Many users start with Clipboard Mode to explore AI translation with zero setup, then move to API Mode later for larger projects where full automation is more efficient. The two modes complement each other — you can switch between them at any time by ticking or unticking the Clipboard Mode checkbox.
+{% endhint %}
 
 ## Tips
 

@@ -35,8 +35,8 @@ On the **AI Settings** tab:
 2. Enter your **API key** for the selected provider
 3. Choose a **model**
 
-{% hint style="warning" %}
-You need at least one API key to use AI features (Supervertaler Assistant, Batch Translate, and single-segment AI translation). TermLens terminology works without an API key.
+{% hint style="info" %}
+**Don't have an API key yet?** You can skip this step entirely and use **[Clipboard Mode](clipboard-mode.md)** instead. Clipboard Mode lets you translate and proofread using any web-based AI you already have access to — ChatGPT, Claude, Gemini, or any other LLM chat interface. No API key required. It is the fastest way to start using AI translation in Supervertaler for Trados.
 {% endhint %}
 
 ### 4. Click OK
@@ -51,7 +51,17 @@ Settings are saved and applied immediately.
 2. Navigate to any segment – TermLens automatically displays term matches for the source text
 3. Click a term translation to insert it into the target, or press **Alt+1** through **Alt+9**
 
-### AI Translate
+### Clipboard Mode (no API key needed)
+
+1. Open the **Supervertaler Assistant** panel and switch to the **Batch Operations** tab
+2. Tick the **Clipboard Mode** checkbox
+3. Click **Copy to Clipboard** — a ready-to-use prompt with your segments, terminology, and instructions is copied
+4. Paste it into any web-based AI (ChatGPT, Claude, Gemini, etc.) and send it
+5. Copy the AI's response and click **Paste from Clipboard** — the translations are written back into Trados
+
+See [Clipboard Mode](clipboard-mode.md) for the full walkthrough.
+
+### AI Translate (API key required)
 
 1. Place the cursor in a segment
 2. Press **Ctrl+T** to translate the active segment with AI
@@ -69,6 +79,7 @@ Settings are saved and applied immediately.
 | Feature | Page |
 |---------|------|
 | TermLens terminology display | [TermLens](termlens.md) |
+| AI via clipboard (no API key) | [Clipboard Mode](clipboard-mode.md) |
 | AI chat interface | [Supervertaler Assistant](ai-assistant.md) |
 | Bulk AI translation | [Batch Translate](batch-translate.md) |
 | All shortcuts | [Keyboard Shortcuts](keyboard-shortcuts.md) |
@@ -78,5 +89,6 @@ Settings are saved and applied immediately.
 ## See Also
 
 - [Installation](installation.md)
+- [Clipboard Mode](clipboard-mode.md)
 - [TermLens](termlens.md)
 - [Supervertaler Assistant](ai-assistant.md)
