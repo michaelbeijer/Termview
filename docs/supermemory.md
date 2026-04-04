@@ -135,4 +135,4 @@ SuperMemory stores all knowledge as Markdown files, which you can browse and edi
 
 ## Learn more
 
-SuperMemory is inspired by Andrej Karpathy's [LLM Knowledge Base](https://venturebeat.com/data/karpathy-shares-llm-knowledge-base-architecture-that-bypasses-rag-with-an) architecture. The source code and vault templates are available on [GitHub](https://github.com/michaelbeijer/Supervertaler-SuperMemory).
+SuperMemory is inspired by Andrej Karpathy's [LLM Knowledge Base](https://venturebeat.com/data/karpathy-shares-llm-knowledge-base-architecture-that-bypasses-rag-with-an) architecture. The source code and vault templates are available on [GitHub](https://github.com/Supervertaler/Supervertaler-SuperMemory).
