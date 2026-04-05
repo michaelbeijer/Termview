@@ -3482,6 +3482,11 @@ date: <today's date YYYY-MM-DD>
             {
                 case "studio_list_projects": return "Checking Trados projects\u2026";
                 case "studio_get_project": return "Looking up project details\u2026";
+                case "studio_get_project_statistics": return "Reading project statistics\u2026";
+                case "studio_get_file_status": return "Checking file status\u2026";
+                case "studio_list_project_termbases": return "Listing project termbases\u2026";
+                case "studio_get_tm_info": return "Reading TM details\u2026";
+                case "studio_search_tm": return "Searching translation memory\u2026";
                 case "studio_list_tms": return "Listing translation memories\u2026";
                 case "studio_list_project_templates": return "Listing project templates\u2026";
                 default: return "Querying Trados Studio\u2026";

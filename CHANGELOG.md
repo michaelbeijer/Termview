@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.18.45] — 2026-04-05
+
+### Added
+- **Project Statistics tool** — ask "What are the word counts for this project?" to get a full analysis breakdown (perfect, context, exact, fuzzy, new, repetitions) per language direction, read directly from the `.sdlproj` file
+- **File Status tool** — ask "What is the translation status of the files?" to see per-file confirmation status (not started, draft, translated, approved, signed off) with segment and word counts
+- **Project Termbases tool** — ask "What termbases are attached to this project?" to list termbases with their enabled state, file paths, and language index mappings
+- **TM Info tool** — ask "Tell me about my English-Dutch TM" to get TM details (language pair, segment count, file size, creation date) read directly from the `.sdltm` SQLite metadata
+- **TM Search tool** — ask "Search the TM for 'compliance'" to find how terms or phrases were translated before, with source/target pairs and usage counts
+
+### Improved
+- **Studio Tools help page** — expanded with all 9 tools, 30+ example questions organised by category (projects, statistics, progress, termbases, TMs, TM search, combined)
+
+---
+
 ## [4.18.44] — 2026-04-05
 
 ### Added
