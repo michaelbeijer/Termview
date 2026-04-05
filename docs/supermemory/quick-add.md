@@ -6,13 +6,13 @@ description: Capture terms and corrections while translating
 
 While translating in Trados, you can instantly add a term or correction to your SuperMemory vault -- and optionally inject it into your active translation prompt so the next Ctrl+T picks it up immediately.
 
-<figure><img src="../.gitbook/assets/Sv_SuperMemory-Add-to-SuperMemory-dialogue.png" alt="Add to SuperMemory dialog"><figcaption><p>The Add to SuperMemory dialog</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/Sv_SuperMemory-Add-to-SuperMemory-dialogue.png" alt="Add to SuperMemory dialogue"><figcaption><p>The Add to SuperMemory dialogue</p></figcaption></figure>
 
 ## How to use
 
 1. In the Trados editor, select the source text you want to capture (optional -- the full source segment is used if nothing is selected)
 2. Press **Ctrl+Alt+M** or right-click and choose **Add to SuperMemory**
-3. Fill in the dialog:
+3. Fill in the dialogue:
    * **Term / pattern (what's wrong)** -- the incorrect or ambiguous term (pre-filled from your selection)
    * **Correction** -- the correct translation (pre-filled from target selection, if any). The label adapts to your target language (e.g. "Correct Dutch form")
    * **Notes** -- optional context or explanation

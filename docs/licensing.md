@@ -1,14 +1,14 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 Supervertaler for Trados uses a subscription-based licensing model with a free trial to get started.
 
 ## Free Trial
 
-When you first install Supervertaler for Trados, a **14-day free trial** starts automatically. During the trial, all features are unlocked — both TermLens terminology features and the AI-powered Supervertaler Assistant.
+When you first install Supervertaler for Trados, a **14-day free trial** starts automatically. During the trial, all features are unlocked – both TermLens terminology features and the AI-powered Supervertaler Assistant.
 
-No sign-up or credit card is required to start the trial. The remaining days are shown in the **Licence** tab in Settings and in the About dialog.
+No sign-up or credit card is required to start the trial. The remaining days are shown in the **Licence** tab in Settings and in the About dialogue.
 
 ## Plans
 
@@ -16,7 +16,7 @@ No sign-up or credit card is required to start the trial. The remaining days are
 |------|---------|--------|-----------------|
 | **TermLens** | €10/month | €100/year | TermLens panel, termbases, MultiTerm support, Term Picker, quick-add shortcuts, non-translatable management, Termbase Editor, TSV import/export |
 | **Supervertaler Assistant** | €15/month | €150/year | AI Assistant chat panel, Batch Translate, Prompt Library, multimodal image support, TM match injection, termbases for AI context |
-| **TermLens + Supervertaler Assistant** | €20/month | €200/year | Everything in both plans — full terminology + AI features |
+| **TermLens + Supervertaler Assistant** | €20/month | €200/year | Everything in both plans – full terminology + AI features |
 
 {% hint style="info" %}
 All plans include future updates and new features within their tier. Annual plans include **2 months free** compared to monthly billing.
@@ -25,7 +25,7 @@ All plans include future updates and new features within their tier. Annual plan
 ## Purchasing a Licence
 
 1. Visit [supervertaler.com/trados](https://supervertaler.com/trados/) and choose a plan
-2. Complete the checkout — you will receive a **licence key** by email
+2. Complete the checkout – you will receive a **licence key** by email
 3. Open Trados Studio → **Settings → Licence** tab
 4. Paste your licence key and click **Activate**
 
@@ -42,16 +42,16 @@ Your licence allows activation on up to **2 machines** (e.g. a desktop and a lap
 A confirmation message appears when activation succeeds. The Licence tab shows your plan name, masked licence key, status, and last verification date.
 
 {% hint style="success" %}
-You can also reach the Licence tab by clicking the licence status text in the **About** dialog (accessible via the **?** button on any panel).
+You can also reach the Licence tab by clicking the licence status text in the **About** dialogue (accessible via the **?** button on any panel).
 {% endhint %}
 
 ## Managing Your Subscription
 
 From the **Licence** tab in Settings, you can:
 
-- **Verify Now** — manually check your licence status with the server
-- **Deactivate** — remove the licence from this machine (frees up an activation slot)
-- **Manage subscription →** — opens the Lemon Squeezy billing portal where you can update payment details, change plans, or cancel
+- **Verify Now** – manually check your licence status with the server
+- **Deactivate** – remove the licence from this machine (frees up an activation slot)
+- **Manage subscription →** – opens the Lemon Squeezy billing portal where you can update payment details, change plans, or cancel
 
 ## Offline Use
 
@@ -61,10 +61,10 @@ After activation, the plugin caches your licence status locally. You can work of
 
 After the 14-day trial ends, features are locked based on your plan:
 
-- **No licence** — both TermLens and Supervertaler Assistant show a "licence required" overlay
-- **TermLens plan** — TermLens panel is fully functional; Supervertaler Assistant shows an "upgrade required" overlay
-- **Supervertaler Assistant plan** — AI features are fully functional; termbases (including [MultiTerm](multiterm-support.md)) are loaded for AI context so your terminology is injected into AI prompts. The TermLens panel (chips, shortcuts, Term Picker) shows a "licence required" overlay
-- **TermLens + Supervertaler Assistant plan** — all features unlocked
+- **No licence** – both TermLens and Supervertaler Assistant show a "licence required" overlay
+- **TermLens plan** – TermLens panel is fully functional; Supervertaler Assistant shows an "upgrade required" overlay
+- **Supervertaler Assistant plan** – AI features are fully functional; termbases (including [MultiTerm](multiterm-support.md)) are loaded for AI context so your terminology is injected into AI prompts. The TermLens panel (chips, shortcuts, Term Picker) shows a "licence required" overlay
+- **TermLens + Supervertaler Assistant plan** – all features unlocked
 
 Your termbases, settings, and prompt library are preserved regardless of plan. Activating or upgrading a licence immediately unlocks the corresponding features.
 
@@ -81,9 +81,9 @@ If you can no longer access the old machine, the activation slot will be freed a
 
 The plugin makes **no network calls** except to:
 
-1. **Your chosen AI provider** (OpenAI, Anthropic, Google Gemini, OpenRouter, or local Ollama) — only when you use AI features
-2. **Lemon Squeezy licence API** (`api.lemonsqueezy.com`) — for licence activation and periodic validation
-3. **Anonymous usage statistics** (strictly opt-in) — if you consent, a single ping on startup sends only: plugin version, OS version, Trados version, and system locale. See [Usage Statistics](settings/usage-statistics.md) for details.
+1. **Your chosen AI provider** (OpenAI, Anthropic, Google Gemini, OpenRouter, or local Ollama) – only when you use AI features
+2. **Lemon Squeezy licence API** (`api.lemonsqueezy.com`) – for licence activation and periodic validation
+3. **Anonymous usage statistics** (strictly opt-in) – if you consent, a single ping on startup sends only: plugin version, OS version, Trados version, and system locale. See [Usage Statistics](settings/usage-statistics.md) for details.
 
 The licence validation sends only your licence key and a hashed machine fingerprint (a one-way hash of your computer name and Windows user ID). No personal data, no translation content, no termbase information is ever collected.
 

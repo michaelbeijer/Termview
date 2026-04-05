@@ -1,12 +1,12 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 Configure the AI provider, model, and context options used by the Supervertaler for Trados plugin.
 
 ## Accessing AI settings
 
-Open the plugin **Settings** dialog and switch to the **AI** tab.
+Open the plugin **Settings** dialogue and switch to the **AI** tab.
 
 ## Provider selection
 
@@ -58,7 +58,7 @@ For providers that expose an OpenAI-compatible API (e.g., Azure OpenAI, together
 
 ## OpenRouter
 
-[OpenRouter](https://openrouter.ai) is an API gateway that gives you access to 200+ models from OpenAI, Anthropic, Google, Mistral, Meta, and many others — all through a single API key. Instead of managing separate keys for each provider, you sign up once at OpenRouter and use one key for everything.
+[OpenRouter](https://openrouter.ai) is an API gateway that gives you access to 200+ models from OpenAI, Anthropic, Google, Mistral, Meta, and many others – all through a single API key. Instead of managing separate keys for each provider, you sign up once at OpenRouter and use one key for everything.
 
 ### Getting started
 
@@ -72,25 +72,25 @@ The model dropdown includes a curated selection of the best models for translati
 
 | Model | Description |
 |-------|-------------|
-| **Claude Sonnet 4.6** | Recommended — best balance of speed, quality, and cost |
-| **Claude Opus 4.6** | Highest quality — best for specialized legal/technical translation |
-| **GPT-5.4** | Premium quality — OpenAI's most advanced model |
+| **Claude Sonnet 4.6** | Recommended – best balance of speed, quality, and cost |
+| **Claude Opus 4.6** | Highest quality – best for specialized legal/technical translation |
+| **GPT-5.4** | Premium quality – OpenAI's most advanced model |
 | **GPT-5.4 Mini** | Fast, affordable, and high quality for everyday translation |
 | **Gemini 3.1 Pro** | Google's most advanced model, large context |
-| **Gemini 3 Flash** | Fast and affordable — great for large batch jobs |
-| **Mistral Small 4** | Very fast and cheap — good multilingual support |
-| **Qwen 3.6 Plus (Free)** | Free — no API costs, good general-purpose quality |
+| **Gemini 3 Flash** | Fast and affordable – great for large batch jobs |
+| **Mistral Small 4** | Very fast and cheap – good multilingual support |
+| **Qwen 3.6 Plus (Free)** | Free – no API costs, good general-purpose quality |
 
 ### Using any OpenRouter model
 
-The model dropdown is **editable** when OpenRouter is selected. You can pick from the curated list or type any OpenRouter model ID directly — for example, `meta-llama/llama-3.1-70b-instruct` or `deepseek/deepseek-r1`. Browse all available models at [openrouter.ai/models](https://openrouter.ai/models).
+The model dropdown is **editable** when OpenRouter is selected. You can pick from the curated list or type any OpenRouter model ID directly – for example, `meta-llama/llama-3.1-70b-instruct` or `deepseek/deepseek-r1`. Browse all available models at [openrouter.ai/models](https://openrouter.ai/models).
 
 ### Pricing
 
 OpenRouter adds a **5.5% platform fee** on top of the underlying provider's token price. For example, if Claude Sonnet 4.6 costs $3/$15 per million tokens at Anthropic, it costs approximately $3.17/$15.83 through OpenRouter. For a typical 5,000-word translation costing $0.50, the OpenRouter fee adds less than 3 cents.
 
 {% hint style="info" %}
-OpenRouter also offers some **free models** (marked with "Free" in the dropdown). These have no API cost at all — they are rate-limited but perfectly usable for testing or light workloads.
+OpenRouter also offers some **free models** (marked with "Free" in the dropdown). These have no API cost at all – they are rate-limited but perfectly usable for testing or light workloads.
 {% endhint %}
 
 ## AI context options
@@ -182,16 +182,16 @@ When enabled, AI operations are logged to the **Reports** tab in the Supervertal
 * Expandable sections for the **system prompt**, **messages**, and **response**
 
 {% hint style="info" %}
-**Batch Translate** operations appear as a single consolidated entry showing the combined token count, cost, and total duration for the entire operation — regardless of how many sub-batches were processed.
+**Batch Translate** operations appear as a single consolidated entry showing the combined token count, cost, and total duration for the entire operation – regardless of how many sub-batches were processed.
 {% endhint %}
 
 Click "Show system prompt...", "Show messages...", or "Show response..." to expand a section. Press **Escape** to collapse it. Use **Copy** to copy a single section, or **Copy all** to copy the full prompt details to your clipboard.
 
 This is useful for:
 
-* **Monitoring costs** — see exactly how many tokens each operation uses
-* **Debugging prompts** — inspect the full text sent to the AI to understand its behaviour
-* **Comparing models** — run the same prompt with different models and compare token usage
+* **Monitoring costs** – see exactly how many tokens each operation uses
+* **Debugging prompts** – inspect the full text sent to the AI to understand its behaviour
+* **Comparing models** – run the same prompt with different models and compare token usage
 
 {% hint style="info" %}
 Prompt logging is off by default to keep the Reports tab clean. Enable it when you want to inspect or audit your AI usage. Log entries are stored in memory only and cleared when Trados restarts.

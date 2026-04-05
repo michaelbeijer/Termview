@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 The AI Proofreader checks your translated segments for errors using AI. It identifies issues such as mistranslations, omissions, grammar problems, and inconsistencies, and presents the results as clickable issue cards in the **Reports** tab.
@@ -27,7 +27,7 @@ The scope dropdown controls which segments are checked:
 
 ## Prompt Selection
 
-When in Proofread mode, the prompt dropdown shows only prompts with the **Proofread** category. This keeps the list focused — translation prompts are hidden.
+When in Proofread mode, the prompt dropdown shows only prompts with the **Proofread** category. This keeps the list focused – translation prompts are hidden.
 
 If no prompt is selected, the AI uses a default proofreading instruction that checks for accuracy, completeness, grammar, and consistency.
 
@@ -39,17 +39,17 @@ You can create custom proofreading prompts in the [Prompt Manager](settings/prom
 
 Proofreading results appear in the **Reports** tab of the Supervertaler Assistant panel. Each issue is shown as a clickable card containing:
 
-* **Segment number** — the actual per-file segment number as shown in the Trados editor grid
-* **Issue description** — what the AI found wrong
-* **Suggestion** — the AI's recommended fix (if available)
+* **Segment number** – the actual per-file segment number as shown in the Trados editor grid
+* **Issue description** – what the AI found wrong
+* **Suggestion** – the AI's recommended fix (if available)
 
 ### Navigating to Issues
 
-Click any issue card to navigate directly to that segment in the Trados editor. This works correctly in multi-file projects — the plugin uses the segment's internal identifiers to find the exact segment.
+Click any issue card to navigate directly to that segment in the Trados editor. This works correctly in multi-file projects – the plugin uses the segment's internal identifiers to find the exact segment.
 
 ### Dismissing Issues
 
-Each issue card has a checkbox. Tick it to dismiss the issue and remove it from the list. This lets you work through the results one by one, keeping track of which issues you have already addressed. When all issues have been dismissed, the Reports tab shows "All issues addressed — well done!"
+Each issue card has a checkbox. Tick it to dismiss the issue and remove it from the list. This lets you work through the results one by one, keeping track of which issues you have already addressed. When all issues have been dismissed, the Reports tab shows "All issues addressed – well done!"
 
 ### Clearing Results
 

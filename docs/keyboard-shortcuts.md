@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 All keyboard shortcuts available in Supervertaler for Trados, with Mac equivalents for users running Trados in Parallels.
@@ -49,7 +49,7 @@ Assign prompts to slots in **Settings → Prompts**. Select a QuickLauncher prom
 
 | Shortcut (Windows) | Shortcut (Mac) | Action |
 |---------------------|----------------|--------|
-| `Ctrl+Alt+M` | `Control+Option+M` | Add to SuperMemory — quick-add a term or correction to your knowledge base |
+| `Ctrl+Alt+M` | `Control+Option+M` | Add to SuperMemory – quick-add a term or correction to your knowledge base |
 
 ## Navigation and Display
 
@@ -61,7 +61,7 @@ Assign prompts to slots in **Settings → Prompts**. Select a QuickLauncher prom
 
 ## Shortcuts for Terms 10+
 
-When a segment has more than 9 matched terms, you can still insert terms by number using Alt+digit. TermLens offers two shortcut styles — choose the one you prefer in **Settings > TermLens > Term shortcuts**.
+When a segment has more than 9 matched terms, you can still insert terms by number using Alt+digit. TermLens offers two shortcut styles – choose the one you prefer in **Settings > TermLens > Term shortcuts**.
 
 ### Sequential (default)
 

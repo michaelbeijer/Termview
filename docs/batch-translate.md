@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 Batch Translate lets you translate multiple segments at once using AI. It is located in the **Supervertaler Assistant** panel, on the **Batch Operations** tab.
@@ -36,7 +36,7 @@ Choose a prompt to guide the AI translation style and domain. The prompt selecto
 * **Default Translation Prompt** – a general-purpose prompt that works well for most content types. Use it as-is or duplicate it in the Prompt Manager and customise it for your domain.
 * **Custom prompts** – your own prompts created in the Prompt Manager
 
-The **active prompt** for the current project is marked with a checkmark in the dropdown. When you open a project that has an active prompt set, it is automatically selected. See [SuperMemory — Active Prompt](supermemory.md#active-prompt) for how to set the active prompt.
+The **active prompt** for the current project is marked with a checkmark in the dropdown. When you open a project that has an active prompt set, it is automatically selected. See [SuperMemory – Active Prompt](supermemory.md#active-prompt) for how to set the active prompt.
 
 {% hint style="success" %}
 **Tip:** If you save a prompt with the same name as your Trados project, the dropdown will auto-select it whenever you open that project. For example, a prompt called "HAYNESPRO" will be auto-selected when working in a project called HAYNESPRO.
@@ -48,7 +48,7 @@ For specialised fields (medical, legal, patent, etc.), create a custom prompt wi
 
 ## Provider and Model
 
-The current AI provider and model are displayed below the prompt selector. Click the provider/model label to open a flyout menu where you can switch models instantly — the same menu available in the Chat tab. Alternatively, open the settings dialog (gear icon in the TermLens header) and go to the **AI Settings** tab.
+The current AI provider and model are displayed below the prompt selector. Click the provider/model label to open a flyout menu where you can switch models instantly – the same menu available in the Chat tab. Alternatively, open the settings dialogue (gear icon in the TermLens header) and go to the **AI Settings** tab.
 
 ## Progress and Logging
 
@@ -83,7 +83,7 @@ TM matches and surrounding segments are **not** included in Batch Translate – 
 
 ## Clipboard Mode
 
-If you prefer to use a web-based AI (ChatGPT, Claude, Gemini, etc.) instead of an API, tick the **Clipboard Mode** checkbox. This replaces the Provider and Translate button with **Copy to Clipboard** and **Paste from Clipboard** buttons. Supervertaler builds a complete, ready-to-use prompt — including your selected prompt, terminology, document context, and numbered bilingual segments — and copies it to your clipboard. See [Clipboard Mode](clipboard-mode.md) for full details.
+If you prefer to use a web-based AI (ChatGPT, Claude, Gemini, etc.) instead of an API, tick the **Clipboard Mode** checkbox. This replaces the Provider and Translate button with **Copy to Clipboard** and **Paste from Clipboard** buttons. Supervertaler builds a complete, ready-to-use prompt – including your selected prompt, terminology, document context, and numbered bilingual segments – and copies it to your clipboard. See [Clipboard Mode](clipboard-mode.md) for full details.
 
 ## Tips
 
@@ -93,7 +93,7 @@ Start by translating only the empty segments (scope: **Empty Segments Only**). R
 
 ### Generate a Domain-Specific Prompt Automatically
 
-Click **AutoPrompt…** next to the prompt dropdown. Supervertaler analyses your entire document, detects the domain, and uses AI to generate a comprehensive translation prompt with terminology rules, style guidelines, and anti-truncation controls — all tailored to your specific project. See [AutoPrompt](generate-prompt.md) for details.
+Click **AutoPrompt…** next to the prompt dropdown. Supervertaler analyses your entire document, detects the domain, and uses AI to generate a comprehensive translation prompt with terminology rules, style guidelines, and anti-truncation controls – all tailored to your specific project. See [AutoPrompt](generate-prompt.md) for details.
 
 ### Create Domain-Specific Prompts Manually
 

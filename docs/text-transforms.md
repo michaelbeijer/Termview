@@ -1,16 +1,16 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
-Text transforms are a special type of QuickLauncher prompt that performs local find-and-replace operations on the active target segment — instantly, without calling an AI provider.
+Text transforms are a special type of QuickLauncher prompt that performs local find-and-replace operations on the active target segment – instantly, without calling an AI provider.
 
 ## When to use text transforms
 
 Text transforms are useful for cleaning up invisible or problematic characters in your translations. For example:
 
-- **InDesign (IDML) forced line breaks** — InDesign uses invisible Unicode LINE SEPARATOR (U+2028) characters as forced line breaks (Shift+Enter). These are invisible in Trados but can cause problems in your translations.
-- **Zero-width spaces and joiners** — invisible characters from PDF or web sources
-- **Normalising quotes or dashes** — replacing curly quotes with straight quotes, or em dashes with en dashes
+- **InDesign (IDML) forced line breaks** – InDesign uses invisible Unicode LINE SEPARATOR (U+2028) characters as forced line breaks (Shift+Enter). These are invisible in Trados but can cause problems in your translations.
+- **Zero-width spaces and joiners** – invisible characters from PDF or web sources
+- **Normalising quotes or dashes** – replacing curly quotes with straight quotes, or em dashes with en dashes
 
 ## How it works
 
@@ -19,7 +19,7 @@ Text transforms are useful for cleaning up invisible or problematic characters i
 3. Open the **Text operations** folder
 4. Click **Strip U+2028** (or another transform)
 
-The transform runs instantly. A dialog confirms how many replacements were made, and the cleaned text is copied to your clipboard.
+The transform runs instantly. A dialogue confirms how many replacements were made, and the cleaned text is copied to your clipboard.
 
 {% hint style="info" %}
 Text transforms modify the **target segment** only. The source segment is never changed.
@@ -33,7 +33,7 @@ Supervertaler ships with one built-in text transform:
 
 Removes invisible Unicode LINE SEPARATOR (U+2028) and PARAGRAPH SEPARATOR (U+2029) characters from the target segment, replacing them with spaces. Consecutive spaces are collapsed to a single space.
 
-These characters are commonly inserted by InDesign (IDML) as forced line breaks (Shift+Enter). They are invisible in the Trados editor but can corrupt translations — the AI may produce spurious line breaks, or the characters may cause formatting issues in the final document.
+These characters are commonly inserted by InDesign (IDML) as forced line breaks (Shift+Enter). They are invisible in the Trados editor but can corrupt translations – the AI may produce spurious line breaks, or the characters may cause formatting issues in the final document.
 
 ## Creating your own transforms
 
@@ -66,7 +66,7 @@ Use `\uXXXX` to specify Unicode characters by their code point. This is essentia
 
 | Escape | Character | Description |
 |--------|-----------|-------------|
-| `\u2028` | (invisible) | LINE SEPARATOR — InDesign forced line break |
+| `\u2028` | (invisible) | LINE SEPARATOR – InDesign forced line break |
 | `\u2029` | (invisible) | PARAGRAPH SEPARATOR |
 | `\u200B` | (invisible) | ZERO WIDTH SPACE |
 | `\u200C` | (invisible) | ZERO WIDTH NON-JOINER |
@@ -122,13 +122,13 @@ Text transforms appear in the QuickLauncher menu alongside regular prompts. You 
 
 ## Clipboard
 
-After a transform runs, the cleaned target text is automatically copied to your clipboard. This is useful if you need to paste the cleaned text elsewhere — for example, into a text editor or a QA tool.
+After a transform runs, the cleaned target text is automatically copied to your clipboard. This is useful if you need to paste the cleaned text elsewhere – for example, into a text editor or a QA tool.
 
 ## Technical notes
 
 - Transforms use Trados's `ProcessSegmentPair` API to commit changes, the same mechanism used by Batch Translate. This ensures all formatting tags (bold, italic, etc.) are preserved.
 - After replacements, consecutive spaces are collapsed to a single space to prevent double spaces where an invisible character sat next to an existing space.
-- Transforms do not appear in the AI Assistant chat — they run locally and show a brief confirmation dialog.
+- Transforms do not appear in the AI Assistant chat – they run locally and show a brief confirmation dialogue.
 
 ---
 

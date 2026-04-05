@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 Supervertaler for Trados is a plugin for **Trados Studio 2024+** that brings Supervertaler’s terminology and AI features directly into the Trados editor. It runs natively inside Trados Studio as a set of dockable panels, so you never have to leave the editor.
@@ -37,7 +37,7 @@ Translate multiple segments at once using AI. Choose a scope (empty segments, al
 
 ### Prompt Library
 
-A built-in Default Translation Prompt and Default Proofreading Prompt to get you started, plus QuickLauncher prompts for common tasks. Create your own custom prompts in the Prompt Manager — duplicate the default and tailor it to your domain.
+A built-in Default Translation Prompt and Default Proofreading Prompt to get you started, plus QuickLauncher prompts for common tasks. Create your own custom prompts in the Prompt Manager – duplicate the default and tailor it to your domain.
 
 ### Termbase Management
 
@@ -45,7 +45,7 @@ Create, edit, and import termbases in Supervertaler's `.db` format. Quick-add te
 
 ### SuperMemory (Coming Soon)
 
-A self-organizing, AI-maintained translation knowledge base that replaces traditional TMs and term bases with a living wiki. Drop in client briefs, glossaries, and feedback — the AI compiles them into structured, interlinked knowledge articles. When you translate, the AI consults the knowledge base for full contextual awareness. [Learn more →](supermemory.md)
+A self-organizing, AI-maintained translation knowledge base that replaces traditional TMs and term bases with a living wiki. Drop in client briefs, glossaries, and feedback – the AI compiles them into structured, interlinked knowledge articles. When you translate, the AI consults the knowledge base for full contextual awareness. [Learn more →](supermemory.md)
 
 ## System Requirements
 
@@ -61,7 +61,7 @@ Supervertaler for Trados uses the same SQLite-based termbase format (`.db`) as [
 
 ## Context-Sensitive Help
 
-Press **F1** at any time to open context-sensitive help for the panel or dialog that currently has focus.
+Press **F1** at any time to open context-sensitive help for the panel or dialogue that currently has focus.
 
 ## Next Steps
 

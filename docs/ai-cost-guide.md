@@ -1,7 +1,7 @@
 # AI Cost Guide
 
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 This page helps you estimate the API cost of using AI features in Supervertaler for Trados. All prices are based on official provider pricing as of March 2026 and are shown in **US dollars**.
@@ -12,10 +12,10 @@ AI provider costs are **separate** from your Supervertaler licence. You pay the 
 
 ### How costs are calculated
 
-AI providers charge per **token** — a unit of text roughly equal to ¾ of a word. Costs depend on:
+AI providers charge per **token** – a unit of text roughly equal to ¾ of a word. Costs depend on:
 
-* **Input tokens** — the text you send (source segment, system prompt, terminology context)
-* **Output tokens** — the text the model returns (translated segment, proofread text, generated prompt)
+* **Input tokens** – the text you send (source segment, system prompt, terminology context)
+* **Output tokens** – the text the model returns (translated segment, proofread text, generated prompt)
 
 Because Supervertaler translates **segment by segment**, the system prompt and terminology context are included with every segment. For a typical 5,000-word document (\~250 segments), this means:
 
@@ -58,7 +58,7 @@ These are estimates for a representative document. Actual usage varies with segm
 | --------------------------- | --------- | --------- | ---------- |
 | **Grok 4.20** (recommended) | $0.30     | $0.33     | $0.03      |
 | **Grok 4.1 Fast**           | $0.03     | $0.03     | < $0.01    |
-| **Grok 4.20 Reasoning**     | —         | —         | $0.09      |
+| **Grok 4.20 Reasoning**     | –         | –         | $0.09      |
 
 #### Mistral AI
 
@@ -84,7 +84,7 @@ These are estimates for a representative document. Actual usage varies with segm
 | **Qwen 3.6 Plus (Free)**            | Free      | Free      | Free       |
 
 {% hint style="info" %}
-OpenRouter prices are approximate (base provider price + 5.5% fee). You can also type **any** OpenRouter model ID into the model dropdown — browse all 200+ models at [openrouter.ai/models](https://openrouter.ai/models).
+OpenRouter prices are approximate (base provider price + 5.5% fee). You can also type **any** OpenRouter model ID into the model dropdown – browse all 200+ models at [openrouter.ai/models](https://openrouter.ai/models).
 {% endhint %}
 
 #### Ollama (local)
@@ -97,13 +97,13 @@ OpenRouter prices are approximate (base provider price + 5.5% fee). You can also
 | **Aya Expanse 8B**     | Free      | Free      | Free       |
 
 {% hint style="success" %}
-**Ollama models run on your own computer** — there are no API costs. The trade-off is that quality depends on your hardware and the models are generally less capable than cloud-hosted models. See [AI Settings](settings/ai-settings.md) for setup instructions.
+**Ollama models run on your own computer** – there are no API costs. The trade-off is that quality depends on your hardware and the models are generally less capable than cloud-hosted models. See [AI Settings](settings/ai-settings.md) for setup instructions.
 {% endhint %}
 
 ### Our recommendation
 
 {% hint style="success" %}
-**If you could only pick one model for everything — translation, proofreading, and chat — we would recommend Claude Sonnet 4.6.** It follows translation instructions precisely, handles terminology constraints well, is fast enough for batch operations, and delivers consistently high quality across legal, technical, and general content. It costs roughly $0.50 per 5,000-word document, which is a fraction of a cent per segment.
+**If you could only pick one model for everything – translation, proofreading, and chat – we would recommend Claude Sonnet 4.6.** It follows translation instructions precisely, handles terminology constraints well, is fast enough for batch operations, and delivers consistently high quality across legal, technical, and general content. It costs roughly $0.50 per 5,000-word document, which is a fraction of a cent per segment.
 {% endhint %}
 
 For budget-conscious batch work, **GPT-5.4 Mini** or **Gemini 2.5 Flash** offer excellent quality at a fraction of the price. For the absolute highest quality on specialised content, **Claude Opus 4.6** or **GPT-5.4** are worth the premium.
@@ -135,10 +135,10 @@ Prices change regularly. Check your provider's pricing page for the latest rates
 
 ### Tips for managing costs
 
-* **Start with a budget model** — GPT-5.4 Mini, Gemini 2.5 Flash, or Grok 4.1 Fast are excellent for routine translation at a fraction of the cost.
-* **Use premium models selectively** — reserve GPT-5.4, Claude Opus, or Gemini 2.5 Pro for specialised content (legal, medical, patents) where the quality difference justifies the cost.
-* **Try Ollama for zero cost** — if you have a computer with 8+ GB of RAM, TranslateGemma 12B delivers surprisingly good results for free.
-* **Check your usage** — the [Usage Statistics](settings/usage-statistics.md) tab in Settings tracks your token consumption per provider.
+* **Start with a budget model** – GPT-5.4 Mini, Gemini 2.5 Flash, or Grok 4.1 Fast are excellent for routine translation at a fraction of the cost.
+* **Use premium models selectively** – reserve GPT-5.4, Claude Opus, or Gemini 2.5 Pro for specialised content (legal, medical, patents) where the quality difference justifies the cost.
+* **Try Ollama for zero cost** – if you have a computer with 8+ GB of RAM, TranslateGemma 12B delivers surprisingly good results for free.
+* **Check your usage** – the [Usage Statistics](settings/usage-statistics.md) tab in Settings tracks your token consumption per provider.
 
 ### Built-in cost protection
 
@@ -154,7 +154,7 @@ Regular chat messages include recent conversation history so the AI can follow y
 
 #### Cost warning
 
-If a request is estimated to cost more than $0.50 in input tokens, a confirmation dialogue appears showing the estimated token count and cost. You can cancel before the expensive request is sent.
+If a request is estimated to cost more than $0.50 in input tokens, a confirmation dialogueue appears showing the estimated token count and cost. You can cancel before the expensive request is sent.
 
 <figure><img src=".gitbook/assets/image (9).png" alt=""><figcaption></figcaption></figure>
 
@@ -164,12 +164,12 @@ If a request is estimated to cost more than $0.50 in input tokens, a confirmatio
 
 #### Choosing the right model
 
-For everyday work — chat queries, terminology questions, QuickLauncher prompts — use **GPT-5.4 Mini** or another budget model. Reserve premium models like **GPT-5.4** or **Claude Opus** for AutoPrompt and complex tasks where the quality difference justifies the cost.
+For everyday work – chat queries, terminology questions, QuickLauncher prompts – use **GPT-5.4 Mini** or another budget model. Reserve premium models like **GPT-5.4** or **Claude Opus** for AutoPrompt and complex tasks where the quality difference justifies the cost.
 
 ### See also
 
-* [AI Settings](settings/ai-settings.md) — configure your API keys and choose a model
-* [Batch Translate](batch-translate.md) — translate segments in bulk
-* [AI Proofreader](ai-proofreader.md) — proofread translated segments
-* [AutoPrompt](generate-prompt.md) — generate translation prompts
-* [Licensing & Pricing](licensing.md) — Supervertaler subscription plans
+* [AI Settings](settings/ai-settings.md) – configure your API keys and choose a model
+* [Batch Translate](batch-translate.md) – translate segments in bulk
+* [AI Proofreader](ai-proofreader.md) – proofread translated segments
+* [AutoPrompt](generate-prompt.md) – generate translation prompts
+* [Licensing & Pricing](licensing.md) – Supervertaler subscription plans

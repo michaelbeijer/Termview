@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 TermLens is an inline terminology display that shows the source text of the current segment word by word, with glossary translations directly underneath each matched term. It updates automatically when you navigate to a new segment.
@@ -44,7 +44,7 @@ In addition to colour coding, TermLens shows small indicators in the top-right c
 | Indicator | Meaning |
 | --------- | ------- |
 | **≡** (indigo) | The entry has synonyms (source-side, target-side, or both). Hover to see them. |
-| **●** (amber) | The entry has metadata — a definition, domain, notes, or URL. Hover to see details. |
+| **●** (amber) | The entry has metadata – a definition, domain, notes, or URL. Hover to see details. |
 
 Both indicators can appear simultaneously. Hover over any term chip to see an interactive popup with full details, including source synonyms (prefixed with "Also:"), target synonyms (shown as bullet points), definitions, domain, notes, and clickable URLs. The popup stays open when you move the mouse into it, so you can click on links.
 
@@ -54,7 +54,7 @@ The **Notes** and **Definition** fields in the term popup support Markdown forma
 
 <figure><img src=".gitbook/assets/Markdown formatting rendered in TermLens term popup.png" alt=""><figcaption>Markdown formatting rendered in TermLens term popup</figcaption></figure>
 
-<figure><img src=".gitbook/assets/Markdown in the Edit Term entry dialogue.png" alt=""><figcaption>Markdown in the Edit Term entry dialogue</figcaption></figure>
+<figure><img src=".gitbook/assets/Markdown in the Edit Term entry dialogueue.png" alt=""><figcaption>Markdown in the Edit Term entry dialogueue</figcaption></figure>
 
 ### Resizable Popup
 
@@ -74,8 +74,8 @@ Each matched term in TermLens is assigned a **numbered badge**. Press **Alt+1** 
 
 For terms numbered 10 and above, TermLens supports two shortcut styles (configurable in Settings):
 
-* **Sequential** (default) — type the term number digit by digit: `Alt+14` inserts term 14
-* **Repeated digit** — press the same digit key multiple times: `Alt+55` inserts term 14 (5th term in the second tier: 9+5)
+* **Sequential** (default) – type the term number digit by digit: `Alt+14` inserts term 14
+* **Repeated digit** – press the same digit key multiple times: `Alt+55` inserts term 14 (5th term in the second tier: 9+5)
 
 The badge on each term chip shows exactly which key combination to use. See [Keyboard Shortcuts](keyboard-shortcuts.md) for details on both modes.
 
@@ -85,7 +85,7 @@ Terms beyond 45 have no keyboard shortcut. Use the **Term Picker** to insert the
 
 ### Term Picker (Ctrl+Alt+Down)
 
-For segments with many matches, press **Ctrl+Alt+Down** to open the **Term Picker** dialogue. It shows all matched terms in a searchable list and lets you insert any term with a double-click or Enter.
+For segments with many matches, press **Ctrl+Alt+Down** to open the **Term Picker** dialogueue. It shows all matched terms in a searchable list and lets you insert any term with a double-click or Enter.
 
 <figure><img src=".gitbook/assets/Sv_Term-Picker.png" alt=""><figcaption></figcaption></figure>
 
@@ -102,17 +102,17 @@ Right-click any term in TermLens to access:
 
 ## Quick-Add Terms
 
-You can add terms without opening a dialogue:
+You can add terms without opening a dialogueue:
 
 | Shortcut       | Action                                                                    |
 | -------------- | ------------------------------------------------------------------------- |
 | **Alt+Down**   | Quick-add the selected text to all write termbases                        |
 | **Alt+Up**     | Quick-add the selected text to the project termbase                       |
-| **Ctrl+Alt+T** | Open the Add Term Entry dialog (full editor: definition, domain, notes, URL, synonyms) |
+| **Ctrl+Alt+T** | Open the Add Term Entry dialogue (full editor: definition, domain, notes, URL, synonyms) |
 | **Ctrl+Alt+N** | Quick-add the selected text as a non-translatable term                    |
 
 {% hint style="success" %}
-Quick-add shortcuts use the currently selected source text and the corresponding selected or clipboard target text. The term is added instantly without opening a dialog.
+Quick-add shortcuts use the currently selected source text and the corresponding selected or clipboard target text. The term is added instantly without opening a dialogue.
 {% endhint %}
 
 ## Font Size

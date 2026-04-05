@@ -1,12 +1,12 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 Configure how TermLens loads and displays terminology in Trados Studio.
 
 ## Accessing TermLens settings
 
-Click the **gear icon** in the TermLens panel, or open the plugin **Settings** dialog and switch to the **TermLens** tab.
+Click the **gear icon** in the TermLens panel, or open the plugin **Settings** dialogue and switch to the **TermLens** tab.
 
 ## Database path
 
@@ -40,7 +40,7 @@ If disabled, the termbase loads the first time you open the TermLens settings or
 
 ## Case-sensitive matching
 
-By default, TermLens matches terms regardless of letter case — "polymer", "Polymer", and "POLYMER" all match the same term entry. Enable **"Enable case-sensitive matching globally"** to require exact case matching across all termbases.
+By default, TermLens matches terms regardless of letter case – "polymer", "Polymer", and "POLYMER" all match the same term entry. Enable **"Enable case-sensitive matching globally"** to require exact case matching across all termbases.
 
 You can also control case sensitivity per termbase using the **CS** checkbox in the termbase grid. When the CS checkbox is ticked for a termbase, that termbase always matches case-sensitively; when unticked, it matches case-insensitively.
 
@@ -58,10 +58,10 @@ Increase the font size if TermLens text is hard to read; decrease it to fit more
 
 Choose how Alt+digit shortcuts work when a segment has more than 9 matched terms:
 
-* **Sequential** (default) — type the term number digit by digit. Alt+45 inserts term 45. Badges show clean sequential numbers (10, 11, 12, ...). There is a brief delay after each digit while the system waits for a possible next digit.
-* **Repeated digit** — press the same digit key multiple times. Alt+55 inserts term 14 (the 5th term in the second tier). Badges show repeated digits (11, 22, 333, ...). No delay, but the badges are less intuitive.
+* **Sequential** (default) – type the term number digit by digit. Alt+45 inserts term 45. Badges show clean sequential numbers (10, 11, 12, ...). There is a brief delay after each digit while the system waits for a possible next digit.
+* **Repeated digit** – press the same digit key multiple times. Alt+55 inserts term 14 (the 5th term in the second tier). Badges show repeated digits (11, 22, 333, ...). No delay, but the badges are less intuitive.
 
-Both modes behave identically when a segment has 9 or fewer matches — pressing Alt+N inserts immediately with no delay.
+Both modes behave identically when a segment has 9 or fewer matches – pressing Alt+N inserts immediately with no delay.
 
 ## Shortcut delay
 

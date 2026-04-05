@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 TermLens automatically detects MultiTerm termbases (`.sdltb` files) attached to your active Trados project and displays their terms alongside your Supervertaler terms.
@@ -35,11 +35,11 @@ When you right-click a green MultiTerm chip, the Edit, Delete, and "Mark as Non-
 TermLens monitors your MultiTerm termbases for changes:
 
 * **Term changes** –when you add or edit terms using Trados's native MultiTerm interface, TermLens detects the file change on the next segment navigation and reloads automatically.
-* **Config changes** –when you enable or disable a MultiTerm termbase in **Project Settings > Termbases**, TermLens detects the change within a few seconds and updates the panel automatically — no segment change needed.
+* **Config changes** –when you enable or disable a MultiTerm termbase in **Project Settings > Termbases**, TermLens detects the change within a few seconds and updates the panel automatically – no segment change needed.
 
 ## MultiTerm Termbases in Settings
 
-MultiTerm termbases appear at the bottom of the termbase list in the **Supervertaler Settings** dialog (gear icon > TermLens tab). Each one is labelled with **\[MultiTerm]** and has a light green background to distinguish it from Supervertaler termbases.
+MultiTerm termbases appear at the bottom of the termbase list in the **Supervertaler Settings** dialogue (gear icon > TermLens tab). Each one is labelled with **\[MultiTerm]** and has a light green background to distinguish it from Supervertaler termbases.
 
 | Toggle      | Behaviour                                                                      |
 | ----------- | ------------------------------------------------------------------------------ |
@@ -53,7 +53,7 @@ To add or remove MultiTerm termbases from your project, use Trados Studio's **Pr
 
 If you subscribe to the **Supervertaler Assistant** plan (without TermLens), your MultiTerm termbases are still loaded and used for **AI terminology injection**. This means the AI Assistant, Batch Translate, and Ctrl+T all receive your MultiTerm terminology in their prompts, helping the AI use the correct approved terms.
 
-The TermLens panel itself (blue/green chips, Alt+digit shortcuts, Term Picker) requires the TermLens plan, but the terminology data from your MultiTerm termbases is available to the AI regardless of plan — as long as the termbases are enabled in Trados Project Settings.
+The TermLens panel itself (blue/green chips, Alt+digit shortcuts, Term Picker) requires the TermLens plan, but the terminology data from your MultiTerm termbases is available to the AI regardless of plan – as long as the termbases are enabled in Trados Project Settings.
 
 ## Technical Details
 
@@ -72,7 +72,7 @@ Because the access is read-only, there is no risk of data corruption. TermLens o
 ### Terms added in MultiTerm not updating
 
 * Navigate to a different segment –this triggers the auto-refresh check
-* If terms still do not appear, close and reopen the settings dialog to force a full termbase reload
+* If terms still do not appear, close and reopen the settings dialogue to force a full termbase reload
 
 ***
 

@@ -51,7 +51,7 @@ Supervertaler/
 
 ### Shared resources
 
-The **prompt library** and **resources** folders are shared between both programs. Prompts you create or edit in one program are immediately available in the other. The SQLite database (`supervertaler.db`) holds your termbases and translation memories — Workbench has full read-write access, while the Trados plugin reads from it.
+The **prompt library** and **resources** folders are shared between both programs. Prompts you create or edit in one program are immediately available in the other. The SQLite database (`supervertaler.db`) holds your termbases and translation memories – Workbench has full read-write access, while the Trados plugin reads from it.
 
 ### Program-specific folders
 
@@ -59,4 +59,4 @@ Each program stores its own settings, projects, and runtime data in a dedicated 
 
 ## Automatic Migration
 
-If you are updating from an older version, both programs will automatically reorganise the folder on their next startup. No manual action is required — your settings, license, and data are preserved.
+If you are updating from an older version, both programs will automatically reorganise the folder on their next startup. No manual action is required – your settings, licence, and data are preserved.

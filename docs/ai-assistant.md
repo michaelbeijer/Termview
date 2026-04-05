@@ -1,7 +1,7 @@
 # Supervertaler Assistant
 
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 The Supervertaler Assistant is a conversational chat panel that runs inside Trados Studio as a separate dockable panel. It is context-aware: it automatically includes your current source and target text, matched terminology, and TM matches in every request, so the AI can give you informed answers about the segment you are working on.
@@ -47,7 +47,7 @@ The conversation is saved automatically after every message and restored the nex
 To clear the history, click the **Clear** button in the chat toolbar. This removes all messages from both the display and the saved file.
 
 {% hint style="info" %}
-Chat history is stored in `~/Supervertaler/trados/chat_history.json`. It is a single global history — not per project or per file.
+Chat history is stored in `~/Supervertaler/trados/chat_history.json`. It is a single global history – not per project or per file.
 {% endhint %}
 
 ### Context Awareness
@@ -60,7 +60,7 @@ The assistant knows which project and file you are working in, the language pair
 
 #### Full document content
 
-When enabled, all source segments in the current document are included in the AI prompt. This allows the assistant to analyse the document and determine its type — legal, medical, technical, marketing, financial, scientific, etc. — and use that assessment to inform its advice on terminology, style, and translation choices.
+When enabled, all source segments in the current document are included in the AI prompt. This allows the assistant to analyse the document and determine its type – legal, medical, technical, marketing, financial, scientific, etc. – and use that assessment to inform its advice on terminology, style, and translation choices.
 
 For very large documents, the content is automatically truncated to the configured maximum (default: 500 segments). The truncation preserves the first 80% and the last 20% so the AI still sees both the beginning and the end of the document.
 
@@ -83,11 +83,11 @@ Matched terms from your active termbases are included with their approved transl
 Terms marked as non-translatable or forbidden are flagged so the AI can respect those constraints.
 
 {% hint style="info" %}
-You can control exactly what context the assistant receives. In the settings dialog on the **AI Settings** tab, you can toggle document content, TM matches, term metadata, and select which termbases contribute to the AI prompt.
+You can control exactly what context the assistant receives. In the settings dialogue on the **AI Settings** tab, you can toggle document content, TM matches, term metadata, and select which termbases contribute to the AI prompt.
 {% endhint %}
 
 {% hint style="success" %}
-**Tip:** For the best results, keep document content and term metadata enabled. The more context the AI has, the more accurate and consistent its suggestions will be. The document type analysis is especially valuable — it helps the AI understand that "consideration" means something different in a legal contract than in a marketing brochure.
+**Tip:** For the best results, keep document content and term metadata enabled. The more context the AI has, the more accurate and consistent its suggestions will be. The document type analysis is especially valuable – it helps the AI understand that "consideration" means something different in a legal contract than in a marketing brochure.
 {% endhint %}
 
 ### File Attachments
@@ -96,7 +96,7 @@ The Supervertaler Assistant supports attaching both images and documents to your
 
 #### Images
 
-Attach images for visual context — for example, a screenshot of the source document layout, a reference image, or a table that is hard to describe in text. Images are sent to the AI using each provider's native vision API.
+Attach images for visual context – for example, a screenshot of the source document layout, a reference image, or a table that is hard to describe in text. Images are sent to the AI using each provider's native vision API.
 
 | Method        | How                                                 |
 | ------------- | --------------------------------------------------- |
@@ -108,7 +108,7 @@ Supported image formats: PNG, JPEG, GIF, WebP, BMP. Up to **5 images** per messa
 
 #### Documents
 
-Attach documents to provide the AI with additional reference material — for example, a client style guide, a glossary in spreadsheet form, a reference PDF, or a translation memory export. The text content is automatically extracted from the document and included in your message as context.
+Attach documents to provide the AI with additional reference material – for example, a client style guide, a glossary in spreadsheet form, a reference PDF, or a translation memory export. The text content is automatically extracted from the document and included in your message as context.
 
 | Method        | How                                                 |
 | ------------- | --------------------------------------------------- |
@@ -128,7 +128,7 @@ The chat bubble shows a compact summary (file name and size) instead of the full
 | Text and markup    | TXT, Markdown, HTML, JSON, XML     |
 
 {% hint style="info" %}
-Up to **5 documents** per message, **20 MB** maximum per file. Very large documents are automatically truncated to avoid exceeding AI context limits. Legacy binary formats (DOC, XLS, PPT) use best-effort text extraction — for best results, save as the modern format (DOCX, XLSX, PPTX) first.
+Up to **5 documents** per message, **20 MB** maximum per file. Very large documents are automatically truncated to avoid exceeding AI context limits. Legacy binary formats (DOC, XLS, PPT) use best-effort text extraction – for best results, save as the modern format (DOCX, XLSX, PPTX) first.
 {% endhint %}
 
 {% hint style="success" %}
@@ -151,8 +151,8 @@ If you select text within a bubble before right-clicking, **Copy** and **Apply t
 
 The current provider and model are shown in the status area at the bottom of the chat panel. You can switch models in two ways:
 
-* **Quick switch** — click the provider/model label directly. A dropdown menu appears with all available models grouped by provider. The current model is marked with a tick. Select a different model to switch instantly.
-* **Settings** — open the settings dialogue (gear icon) and switch to the **AI Settings** tab for full configuration including API keys, endpoints, and advanced options.
+* **Quick switch** – click the provider/model label directly. A dropdown menu appears with all available models grouped by provider. The current model is marked with a tick. Select a different model to switch instantly.
+* **Settings** – open the settings dialogueue (gear icon) and switch to the **AI Settings** tab for full configuration including API keys, endpoints, and advanced options.
 
 #### Supported Providers
 

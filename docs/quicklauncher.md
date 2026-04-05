@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 QuickLauncher gives you one-click access to your most-used AI prompts directly from the Trados editor, without switching panels or typing anything.
@@ -17,7 +17,7 @@ QuickLauncher gives you one-click access to your most-used AI prompts directly f
 The menu heading **Supervertaler QuickLauncher** is clickable – click it to open **Settings → Prompts**, where you can view, edit, and organise your QuickLauncher prompts.
 {% endhint %}
 
-The expanded prompt appears as a user message bubble in the **Supervertaler Assistant** chat panel, and the AI response follows immediately below it. The conversation continues from there — you can ask follow-up questions in the chat input as normal.
+The expanded prompt appears as a user message bubble in the **Supervertaler Assistant** chat panel, and the AI response follows immediately below it. The conversation continues from there – you can ask follow-up questions in the chat input as normal.
 
 ## Keyboard shortcut
 
@@ -49,7 +49,7 @@ QuickLauncher prompts have access to the full segment and project context at the
 | `{{SELECTION}}` | Text currently **selected** in the editor | `werkwijze` |
 
 {% hint style="info" %}
-**Segment vs selection:** `{{SOURCE_SEGMENT}}` and `{{TARGET_SEGMENT}}` always give the **entire active segment**. `{{SELECTION}}` gives only the **highlighted portion** — useful for term lookups or focused questions. If nothing is selected, `{{SELECTION}}` is an empty string.
+**Segment vs selection:** `{{SOURCE_SEGMENT}}` and `{{TARGET_SEGMENT}}` always give the **entire active segment**. `{{SELECTION}}` gives only the **highlighted portion** – useful for term lookups or focused questions. If nothing is selected, `{{SELECTION}}` is an empty string.
 {% endhint %}
 
 ### Project variables
@@ -92,9 +92,9 @@ In a **multi-file project**, a file header is inserted at each boundary (because
 ```
 
 {% hint style="warning" %}
-`{{PROJECT}}` sends all source segments to the AI. For a typical 10,000-word patent this costs roughly **4–5 cents** per call with a Sonnet-class model — negligible for important work, but avoid using it in high-frequency prompts. The number of surrounding segments for `{{SURROUNDING_SEGMENTS}}` is configured in **Settings → AI Settings → Surrounding segments** (default: 5).
+`{{PROJECT}}` sends all source segments to the AI. For a typical 10,000-word patent this costs roughly **4–5 cents** per call with a Sonnet-class model – negligible for important work, but avoid using it in high-frequency prompts. The number of surrounding segments for `{{SURROUNDING_SEGMENTS}}` is configured in **Settings → AI Settings → Surrounding segments** (default: 5).
 
-To keep the chat history readable, the chat bubble shows a compact summary (e.g. `[source document — 47 segments]`) instead of the full source text. The complete document is still sent to the AI.
+To keep the chat history readable, the chat bubble shows a compact summary (e.g. `[source document – 47 segments]`) instead of the full source text. The complete document is still sent to the AI.
 {% endhint %}
 
 ### Example: explain a selected term
@@ -164,7 +164,7 @@ variation in meaning between them.
 ### Example: check specific segments by number
 
 After using `{{PROJECT}}` the AI knows the segment numbers, so you can follow up in the
-chat — or build a prompt that asks about specific segments from the start:
+chat – or build a prompt that asks about specific segments from the start:
 
 ```
 I am translating a {{SOURCE_LANGUAGE}} patent into {{TARGET_LANGUAGE}}.
@@ -195,11 +195,11 @@ Here are fuzzy matches from my translation memory:
 {{TM_MATCHES}}
 
 Use the fuzzy matches as reference where helpful, but produce an accurate
-translation of the source segment — do not simply copy a fuzzy match.
+translation of the source segment – do not simply copy a fuzzy match.
 ```
 
 {% hint style="info" %}
-`{{TM_MATCHES}}` only includes matches of **70% or higher**. If no matches meet this threshold, the variable is replaced with "(no fuzzy matches above 70%)". The match data comes from the active segment's translation origin in Trados — the same match shown in the Translation Results pane.
+`{{TM_MATCHES}}` only includes matches of **70% or higher**. If no matches meet this threshold, the variable is replaced with "(no fuzzy matches above 70%)". The match data comes from the active segment's translation origin in Trados – the same match shown in the Translation Results pane.
 {% endhint %}
 
 The plugin fills in all variables and sends the expanded prompt straight to the AI.

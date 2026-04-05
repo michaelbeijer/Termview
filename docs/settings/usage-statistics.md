@@ -1,5 +1,5 @@
 {% hint style="info" %}
-You are viewing help for **Supervertaler for Trados** — the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
+You are viewing help for **Supervertaler for Trados** – the Trados Studio plugin. Looking for help with the standalone app? Visit [Supervertaler Workbench help](https://help.supervertaler.com).
 {% endhint %}
 
 Supervertaler for Trados includes an optional, anonymous usage statistics feature to help the developer understand how many people are using the plugin and what environments they are running it on.
@@ -8,16 +8,16 @@ Supervertaler for Trados includes an optional, anonymous usage statistics featur
 
 ### How it works
 
-* **Strictly opt-in** — on first launch after install or update, a dialog asks if you would like to participate. You must explicitly click "Yes" to opt in. If you click "No", no data is ever sent.
-* **Minimal data** — a single lightweight ping is sent once per session on plugin startup. The only data included is:
-  * A random anonymous ID (a UUID generated locally on your machine — not tied to any account, machine, or identity)
+* **Strictly opt-in** – on first launch after install or update, a dialogue asks if you would like to participate. You must explicitly click "Yes" to opt in. If you click "No", no data is ever sent.
+* **Minimal data** – a single lightweight ping is sent once per session on plugin startup. The only data included is:
+  * A random anonymous ID (a UUID generated locally on your machine – not tied to any account, machine, or identity)
   * Plugin version (e.g. 4.11.0)
   * OS version (e.g. Windows 11)
   * Trados Studio version
   * System locale (e.g. en-GB)
-* **Country detection** — the hosting provider (Cloudflare) determines your country from the network connection. No IP addresses are stored.
-* **Silent failure** — if the ping fails (no internet, firewall, etc.), nothing happens. No retries, no queuing, no error messages.
-* **First-party only** — data is sent to a Supervertaler-operated Cloudflare Worker endpoint. No third-party trackers, no Google Analytics, no advertising platforms.
+* **Country detection** – the hosting provider (Cloudflare) determines your country from the network connection. No IP addresses are stored.
+* **Silent failure** – if the ping fails (no internet, firewall, etc.), nothing happens. No retries, no queuing, no error messages.
+* **First-party only** – data is sent to a Supervertaler-operated Cloudflare Worker endpoint. No third-party trackers, no Google Analytics, no advertising platforms.
 
 ### What is NOT collected
 
